@@ -5,10 +5,7 @@ import { PlayDashboardComponent } from './play-dashboard/play-dashboard.componen
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'plays/:id', component: PlayDashboardComponent },
-  { path: '**', redirectTo: '' }
-];
-
-export const routes: Routes = [
+  { path: '**', redirectTo: '' },
   { path: 'scene', loadComponent: () => import('./scene.component').then(m => m.SceneComponent) },
   { path: 'stage', loadComponent: () => import('./components/stage/stage').then(m => m.Stage) }
-]
+];
