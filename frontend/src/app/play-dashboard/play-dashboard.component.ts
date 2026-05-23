@@ -5,11 +5,12 @@ import { PlayService, Play } from '../services/play.service';
 import { SceneService, Scene } from '../services/scene.service';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
+import { SceneContentModalComponent } from '../scene-content-modal/scene-content-modal.component';
 
 @Component({
   selector: 'app-play-dashboard',
   standalone: true,
-  imports: [CommonModule, DragDropModule, FormsModule],
+  imports: [CommonModule, DragDropModule, FormsModule, SceneContentModalComponent],
   template: `
     <div style="padding: 30px; font-family: sans-serif;">
       <div *ngIf="loading" style="text-align: center; margin-top: 50px;">
@@ -35,7 +36,7 @@ import { FormsModule } from '@angular/forms';
         <!-- Zone Drag & Drop -->
         <div 
           cdkDropList 
-          cdkDropListOrientation="horizontal" 
+          cdkDropListOrientation="mixed" 
           (cdkDropListDropped)="drop($event)" 
           style="display: flex; flex-wrap: wrap; gap: 20px; min-height: 200px; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
           
@@ -45,7 +46,7 @@ import { FormsModule } from '@angular/forms';
 
           <div *ngFor="let scene of scenes; let i = index" cdkDrag style="width: 200px; background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; cursor: grab; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" class="scene-card">
             <!-- Thumbnail Placeholder -->
-            <div style="height: 120px; background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #bbb;">
+            <div (click)="openModal(scene)" style="height: 120px; background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #bbb; cursor: pointer;" title="Cliquer pour configurer le contenu">
               🖼️
             </div>
             
@@ -73,6 +74,13 @@ import { FormsModule } from '@angular/forms';
       <div *ngIf="!loading && !play" style="text-align: center; margin-top: 50px; color: red;">
         <h2>Pièce introuvable (ID: {{ playId }})</h2>
       </div>
+
+      <!-- Pop-up Sélecteur de Contenu -->
+      <app-scene-content-modal 
+        *ngIf="selectedSceneForModal" 
+        [scene]="selectedSceneForModal" 
+        (closeModal)="closeModal()">
+      </app-scene-content-modal>
     </div>
   `,
   styles: [`
@@ -97,6 +105,9 @@ export class PlayDashboardComponent implements OnInit {
   playId: string | null = null;
   play: Play | null = null;
   loading = true;
+  // Modal de sélection
+  selectedSceneForModal: Scene | null = null;
+
   
   scenes: Scene[] = [];
   
@@ -200,6 +211,14 @@ export class PlayDashboardComponent implements OnInit {
     this.editingSceneId = null;
   }
 
+
+  openModal(scene: Scene) {
+    this.selectedSceneForModal = scene;
+  }
+
+  closeModal() {
+    this.selectedSceneForModal = null;
+  }
   cancelEdit() {
     this.editingSceneId = null;
   }
