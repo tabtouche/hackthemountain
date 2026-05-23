@@ -10,21 +10,21 @@
 
 ### 1.1 Description du produit
 
-Application web destinée aux enfants leur permettant de créer des spectacles de marionnettes en 2D. L'enfant assemble plusieurs scènes pour composer une pièce complète. Chaque scène comprend une mise en scène avec des marionnettes (capturées via webcam), une bande-son et un décor (background). Le résultat final est un film animé que l'enfant peut visionner et télécharger.
+Application web conçue comme une **démo en localhost pour un hackathon**, destinée à simuler un outil de création de spectacles de marionnettes en 2D pour enfants. L'utilisateur assemble plusieurs scènes pour composer une pièce complète, avec capture webcam des marionnettes, bande-son et décor. Le résultat final est un film animé visionnable et exportable.
 
 ### 1.2 Objectifs
 
-- Stimuler la créativité et l'imaginaire des enfants.
-- Offrir une expérience de création simple, intuitive et ludique.
-- Permettre la création de contenus exportables et partageables.
+- Démontrer la faisabilité technique lors du hackathon (détection caméra, montage média).
+- Simuler une expérience de création simple, intuitive et ludique pour enfants.
+- Permettre la création de contenus exportables localement.
 
 ### 1.3 Public cible
 
-Enfants de 5 à 12 ans, accompagnés ou non d'un adulte.
+Jury du hackathon (mode démo) / Simulation pour enfants de 5 à 12 ans.
 
 ### 1.4 Plateformes cibles
 
-Navigateur web (desktop en priorité pour MVP1, responsive à prévoir pour MVP2).
+Navigateur web exécuté strictement en **localhost** (desktop uniquement, le responsif n'étant pas une priorité pour la démo du hackathon).
 
 ---
 
@@ -41,6 +41,27 @@ Navigateur web (desktop en priorité pour MVP1, responsive à prévoir pour MVP2
 | Compte utilisateur | ❌ | ✅ |
 | Bibliothèque (pièces et musiques sauvegardées) | ❌ | ✅ |
 | Création de musique manuelle (type GarageBand, contrôle par les mains) | ❌ | ✅ |
+
+### 2.1 Phases d'implémentation du MVP1
+
+Le MVP1 est découpé en phases pour sécuriser la livraison et valider les briques les plus simples avant d'attaquer les fonctionnalités les plus risquées.
+
+| Phase | Objectif | Inclus | Sortie attendue |
+|---|---|---|---|
+| Phase 1 | Fondations du produit | Accueil, création d'une pièce, navigation de base, structure de données d'une pièce et d'une scène | L'utilisateur peut créer une pièce et arriver sur l'écran principal de gestion |
+| Phase 2 | Gestion des scènes | Ajout de scènes, renommage, réorganisation, miniatures de base, ouverture du sélecteur de contenu | L'utilisateur peut organiser une pièce composée de plusieurs scènes |
+| Phase 3 | Contenus de scène | Upload / sélection de musique, upload / sélection de background, association des médias à une scène | Une scène peut être enrichie avec une musique et un décor |
+| Phase 4 | Mise en scène webcam | Accès caméra, détection lapin / loup, enregistrement, pause / reprise, sauvegarde de scène | L'utilisateur peut capturer une scène jouable avec détection en temps réel |
+| Phase 5 | Lecture et export | Assemblage des scènes, lecteur de film, téléchargement du rendu final | La pièce complète peut être visionnée puis exportée |
+
+Ordre recommandé de livraison : Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5.
+
+Priorités techniques par phase :
+- Phase 1 : poser le modèle de données et le routage / navigation.
+- Phase 2 : stabiliser les interactions de gestion d'une pièce.
+- Phase 3 : brancher les assets et la persistance locale des choix.
+- Phase 4 : traiter les contraintes navigateur et webcam.
+- Phase 5 : finaliser l'assemblage et l'export vidéo.
 
 ---
 
@@ -187,14 +208,14 @@ Navigateur web (desktop en priorité pour MVP1, responsive à prévoir pour MVP2
 
 ## 4. Interfaces — MVP2
 
-### 4.1 Interface de compte utilisateur
+### 4.1 Gestion de profils locaux (Compte utilisateur simulé)
 
-**Rôle** : Permettre à l'utilisateur de créer un compte, se connecter et gérer son profil.
+**Rôle** : Simuler la gestion multi-utilisateurs pour la démo, via des profils locaux persistés localement ou en base SQlite.
 
 **Éléments UI :**
-- Formulaire de création de compte (nom d'utilisateur, mot de passe ou OAuth).
-- Formulaire de connexion.
-- Page de profil (avatar, nom, historique des pièces créées).
+- Création de profil basique (choix d'un pseudo et d'un avatar, sans mot de passe ni OAuth).
+- Écran de sélection de profil (switch rapide).
+- Page de profil (avatar, pseudo, historique des pièces créées dans la session).
 
 ---
 
@@ -254,16 +275,26 @@ Accueil
 - L'assemblage et la lecture du film dans le pop-up de visualisation doivent être fluides (minimum 24 fps).
 
 ### 6.2 Compatibilité
-- MVP1 : navigateurs modernes (Chrome, Firefox, Edge, Safari) sur desktop.
-- MVP2 : responsive mobile/tablette.
+- Optimisé pour un usage desktop sur un navigateur moderne récent (ex. Chrome), environnement type pour la démo du hackathon.
+- Le support mobile/tablette n'est pas requis pour la démo localhost.
 
 ### 6.3 Accessibilité
-- Textes et icônes lisibles pour des enfants (taille de police ≥ 16px, contrastes élevés).
+- Textes et icônes lisibles (simulation d'une UI pour enfants : taille de police ≥ 16px, contrastes élevés).
 - Libellés des boutons clairs et illustrés d'icônes.
 
 ### 6.4 Sécurité et vie privée
-- Aucune image ou vidéo capturée par la webcam n'est transmise à un serveur sans consentement explicite.
-- En MVP1, tout le traitement webcam est local (client-side).
+- Le projet tournant exclusivement en localhost, aucune donnée n'est exposée sur internet. 
+- Le traitement webcam reste confiné à la machine de démo (traitement côté client).
+
+### 6.5 Stack technique cible
+
+La stack retenue sert de base au produit complet, pas uniquement au MVP1.
+
+- Frontend : Angular.
+- Backend : Node.js.
+- Base de données : SQLite.
+- Communication : API HTTP entre le frontend Angular et le backend Node.js.
+- Persistance des données : le backend Node.js centralise les écritures métier dans SQLite.
 
 ---
 
@@ -274,18 +305,19 @@ Accueil
 | 1 | Mécanisme de détection des marionnettes (lapin / loup) : marqueurs colorés ? Silhouette ? À définir avec l'équipe tech. | Haute |
 | 2 | Format d'export du film : MP4 côté client (via ffmpeg.wasm) ou rendu serveur ? | Haute |
 | 3 | Nombre de musiques et de backgrounds fournis par défaut dans le carrousel/galerie. | Moyenne |
-| 4 | Stockage des pièces en MVP1 : local storage navigateur ou backend léger ? | Haute |
+| 4 | Stockage des pièces : persistance serveur via backend Node.js + SQLite, avec cache local éventuel en complément. | Décision prise |
 | 5 | Gestion des permissions webcam : tutoriel intégré si l'accès est refusé ? | Moyenne |
 | 6 | Technologie de détection des mains pour MVP2 (MediaPipe, TensorFlow.js, autre). | Basse (MVP2) |
 
 ---
 
-## 8. Hors périmètre (explicitement exclus de MVP1)
+## 8. Hors périmètre (explicitement exclus de tout le projet)
 
-- Compte utilisateur et authentification.
-- Partage de pièces en ligne ou sur les réseaux sociaux.
+- **Toute mise en production ou hébergement en ligne du jeu (le but final est strictement une démo localhost).**
+- Véritable système d'authentification (mots de passe, OAuth, etc.). Les profils MVP2 seront purement simulés.
+- Partage de pièces en ligne ou sur les réseaux sociaux (export local uniquement).
 - Mode multijoueur / collaboration.
-- Édition de la vidéo après enregistrement (découpe, effets).
+- Édition vidéo avancée après enregistrement (découpe, effets).
 - Monétisation ou publicité.
 
 ---
