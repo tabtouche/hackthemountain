@@ -16,8 +16,8 @@ def on_hands(hands: list[HandState], timestamp_ms: int):
             f"pose={hand.pose} ({hand.confidence:.2f})  "
             f"pos=({hand.x:.2f}, {hand.y:.2f})  "
             f"facing={hand.facing}  "
-            f"angle={hand.orientation:.1f}°  "
-            f"mouth={hand.angleMouth:.2f}"
+            f"angle={hand.orientation * 360 / (2 * 3.14159):.1f}°  "
+            f"mouth={hand.angleMouth * 360 / (2 * 3.14159):.2f}"
         )
 
 if __name__ == "__main__":
