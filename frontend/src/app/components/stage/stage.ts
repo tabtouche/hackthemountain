@@ -25,11 +25,9 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   private rabbitImg!: HTMLImageElement;
   private wolfUpperImg!: HTMLImageElement;
   private wolfMouthImg!: HTMLImageElement;
-  private wolfImg!: HTMLImageElement;
   private rabbitLoaded = false;
   private wolfUpperLoaded = false;
   private wolfMouthLoaded = false;
-  private wolfImgLoaded = false;
 
   // Hinge offset (in image-local pixels) applied to the mouth before
   // rotating. Adjust these values to fine-tune the mouth hinge point.
@@ -46,15 +44,12 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       this.rabbitImg = new Image();
     this.wolfUpperImg = new Image();
     this.wolfMouthImg = new Image();
-    this.wolfImg = new Image();
     this.rabbitImg.onload = () => { this.rabbitLoaded = true; };
     this.wolfUpperImg.onload = () => { this.wolfUpperLoaded = true; };
     this.wolfMouthImg.onload = () => { this.wolfMouthLoaded = true; };
-    this.wolfImg.onload = () => { this.wolfImgLoaded = true; };
     this.rabbitImg.src = '/assets/avrage_rabbit.png';
     this.wolfUpperImg.src = '/assets/loup_upper.png';
     this.wolfMouthImg.src = '/assets/loup_mouth.png';
-    this.wolfImg.src = '/assets/loup.png';
     }
   }
 
