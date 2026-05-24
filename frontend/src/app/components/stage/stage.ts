@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, ViewChild, OnInit, OnDestroy, AfterViewInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild, OnInit, OnDestroy, AfterViewInit, OnChanges, SimpleChanges, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Entity } from '../../services/entity-stream-service';
 
@@ -9,9 +9,16 @@ import { Entity } from '../../services/entity-stream-service';
   styleUrls: ['./stage.css'],
   standalone: true
 })
-export class Stage implements OnInit, AfterViewInit, OnDestroy {
+export class Stage implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @Input() entities: Entity[] = [];
+  @Input() hasBackground: boolean = false;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['hasBackground'] && this.isBrowser) {
+      this.draw();
+    }
+  }
 
   private animationFrameId: number | null = null;
   private rabbitImg!: HTMLImageElement;
@@ -66,17 +73,23 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw grid paper placeholder if no background
+    if (!this.hasBackground) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = '#f0f0f0';
-    ctx.lineWidth = 1;
-    const gridSize = 40;
-    for (let x = 0; x <= canvas.width; x += gridSize) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-    }
-    for (let y = 0; y <= canvas.height; y += gridSize) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      ctx.strokeStyle = '#f0f0f0';
+      ctx.lineWidth = 1;
+      const gridSize = 40;
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
     }
 
     this.entities.forEach((e) => {

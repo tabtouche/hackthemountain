@@ -56,7 +56,9 @@
   </div>
 
   <!-- Live stage -->
-  <app-stage [entities]="stageEntities"></app-stage>
+  <div class="stage-wrapper" [style.background-image]="backgroundImage ? 'url(' + backgroundImage + ')' : 'none'" [style.background-size]="'cover'" [style.background-position]="'center'">
+    <app-stage [entities]="stageEntities" [hasBackground]="hasBackground"></app-stage>
+  </div>
 
 </div>
 
@@ -71,8 +73,8 @@
       </div>
 
       <!-- Stage preview -->
-      <div class="preview-stage-wrapper">
-        <app-stage [entities]="previewEntities"></app-stage>
+      <div class="preview-stage-wrapper" [style.background-image]="backgroundImage ? 'url(' + backgroundImage + ')' : 'none'" [style.background-size]="'cover'" [style.background-position]="'center'">
+        <app-stage [entities]="previewEntities" [hasBackground]="hasBackground"></app-stage>
       </div>
 
       <!-- Playback controls -->

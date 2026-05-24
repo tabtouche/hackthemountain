@@ -53,19 +53,40 @@ export class SceneComponent implements OnInit, OnDestroy {
   private previewTimer: ReturnType<typeof setTimeout> | null = null;
   private frameImg = typeof window !== 'undefined' ? new Image() : null;
   private audioElement: HTMLAudioElement | null = null;
+  private backgroundMusicElement: HTMLAudioElement | null = null;
+  backgroundImage: string | null = null;
+  musicPath: string | null = null;
+  
+  get hasBackground(): boolean {
+    return !!this.backgroundImage;
+  }
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       this.sceneId = params['sceneId'];
       this.playId = params['playId'];
+      
+      // Load scene data for background and music
+      if (this.sceneId) {
+        this.sceneService.getScene(Number(this.sceneId)).subscribe({
+          next: (scene) => {
+            this.backgroundImage = scene.background_image || null;
+            
+            // Only use music_path (uploaded files), not music_track (which is just an ID)
+            this.musicPath = scene.music_path || null;
+            
+            // Setup background music if available (only for uploaded music files)
+            if (this.musicPath && typeof Audio !== 'undefined') {
+              this.backgroundMusicElement = new Audio(this.musicPath);
+              this.backgroundMusicElement.loop = true;
+              this.backgroundMusicElement.volume = 0.5;
+            }
+          },
+          error: (err) => console.error('Failed to load scene:', err)
+        });
+      }
     });
 
-    this.entitySubscription = this.entityStream.stream().subscribe(entities => {
-      if (this.recordingState !== 'preview') {
-        this.stageEntities = entities;
-      }
-      this.recorder.record(entities);
-    });
   }
 
   ngOnDestroy(): void {
@@ -73,6 +94,10 @@ export class SceneComponent implements OnInit, OnDestroy {
     this.entitySubscription?.unsubscribe();
     this.stopPuppetProcess();
     this.clearPreviewTimer();
+    if (this.backgroundMusicElement) {
+      this.backgroundMusicElement.pause();
+      this.backgroundMusicElement = null;
+    }
   }
 
   // ── Camera ───────────────────────────────────────────────────────────────
@@ -87,15 +112,25 @@ export class SceneComponent implements OnInit, OnDestroy {
     this.cameraActive = true;
     this.isLoading = true;
     await this.startPuppetProcess();
+    
     this.videoSubscription = this.videoStream.stream().subscribe(dataUrl => {
       if (this.isLoading) this.isLoading = false;
       this.drawVideoFrame(dataUrl);
+    });
+    
+    this.entitySubscription = this.entityStream.stream().subscribe(entities => {
+      if (this.recordingState !== 'preview') {
+        this.stageEntities = entities;
+      }
+      this.recorder.record(entities);
     });
   }
 
   stopCamera(): void {
     this.videoSubscription?.unsubscribe();
     this.videoSubscription = null;
+    this.entitySubscription?.unsubscribe();
+    this.entitySubscription = null;
     this.cameraActive = false;
     this.isLoading = false;
     this.stopPuppetProcess();
@@ -129,6 +164,12 @@ export class SceneComponent implements OnInit, OnDestroy {
       await this.audioRecorder.startRecording();
       this.recorder.start();
       this.recordingState = 'recording';
+      
+      // Start background music if available
+      if (this.backgroundMusicElement) {
+        this.backgroundMusicElement.currentTime = 0;
+        this.backgroundMusicElement.play().catch(err => console.error('Failed to play background music:', err));
+      }
     } catch (error) {
       console.error('Failed to start audio recording:', error);
       alert('Could not access microphone. Please grant permission and try again.');
@@ -138,21 +179,46 @@ export class SceneComponent implements OnInit, OnDestroy {
   pauseRecording(): void {
     this.recorder.pause();
     this.recordingState = 'paused';
+    
+    // Pause background music
+    if (this.backgroundMusicElement) {
+      this.backgroundMusicElement.pause();
+    }
   }
 
   resumeRecording(): void {
     this.recorder.resume();
     this.recordingState = 'recording';
+    
+    // Resume background music
+    if (this.backgroundMusicElement) {
+      this.backgroundMusicElement.play().catch(err => console.error('Failed to resume background music:', err));
+    }
   }
 
   async stopRecording(): Promise<void> {
     this.currentSequence = this.recorder.stop();
+    
+    // Stop background music
+    if (this.backgroundMusicElement) {
+      this.backgroundMusicElement.pause();
+      this.backgroundMusicElement.currentTime = 0;
+    }
+    
     try {
       this.currentAudioRecording = await this.audioRecorder.stopRecording();
     } catch (error) {
       console.error('Failed to stop audio recording:', error);
       this.currentAudioRecording = null;
     }
+    
+    // Check if any frames were recorded
+    if (!this.currentSequence || this.currentSequence.frames.length === 0) {
+      alert('⚠️ Aucune image enregistrée!\n\nLe serveur de suivi des marionnettes (ws://localhost:8765) ne semble pas être en cours d\'exécution.\n\nVeuillez démarrer le serveur de suivi pour enregistrer les mouvements des marionnettes.');
+      this.restartRecording();
+      return;
+    }
+    
     this.recordingState = 'preview';
     this.previewCurrentFrameIndex = 0;
     this.previewPlaying = true;
@@ -218,6 +284,7 @@ export class SceneComponent implements OnInit, OnDestroy {
     this.previewCurrentFrameIndex = index;
     this.previewEntities = this.currentSequence.frames[index]?.entities ?? [];
     if (this.audioElement && this.currentSequence.frames[index]) {
+      this.audioElement.pause();
       this.audioElement.currentTime = this.currentSequence.frames[index].t / 1000;
     }
   }
@@ -266,6 +333,11 @@ export class SceneComponent implements OnInit, OnDestroy {
       
       this.saving = false;
       this.finishPreview();
+      
+      // Navigate back to play dashboard
+      if (this.playId) {
+        this.router.navigate(['/plays', this.playId]);
+      }
     } catch (error) {
       console.error('Failed to save sequence:', error);
       this.saving = false;

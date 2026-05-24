@@ -21,7 +21,15 @@ export class PlayService {
     return this.http.post<Play>(this.apiUrl, { title, director_name });
   }
 
+  getPlays(): Observable<Play[]> {
+    return this.http.get<Play[]>(this.apiUrl);
+  }
+
   getPlay(id: number | string): Observable<Play> {
     return this.http.get<Play>(`${this.apiUrl}/${id}`);
+  }
+
+  deletePlay(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`);
   }
 }

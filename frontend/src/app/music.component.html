@@ -1,19 +1,7 @@
 <div class="music-editor">
   <div class="music-header">
     <button class="back-btn" (click)="goBack()">← Retour</button>
-    <div>
-      <h1>Choisis ta musique</h1>
-      <div class="selection-box" *ngIf="currentSelectionLabel">
-        <span>Sélection : {{ currentSelectionLabel }}</span>
-        <audio
-          *ngIf="selectedTrack && !uploadedAudioUrl"
-          [src]="selectedTrack.audioUrl"
-          controls
-          preload="none"
-          class="selection-audio"
-        ></audio>
-      </div>
-    </div>
+    <h1>🎵 Choisis ta musique</h1>
   </div>
 
   <section class="panel simple-panel">

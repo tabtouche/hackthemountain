@@ -208,9 +208,13 @@ export class Music implements OnInit {
       this.currentSelectionLabel = this.uploadedFile
         ? this.uploadedFile.name
         : this.selectedTrack?.title ?? this.currentSelectionLabel;
-      this.confirmationMessage = this.uploadedFile
+      const message = this.uploadedFile
         ? `Musique uploadée et enregistrée !`
         : `Musique choisie et enregistrée !`;
+      
+      // Show popup and navigate back
+      alert(message);
+      this.goBack();
     } catch (err) {
       console.error(err);
       this.confirmationMessage = 'Erreur lors de l’enregistrement de la musique.';

@@ -12,24 +12,28 @@ import { SceneContentModalComponent } from '../scene-content-modal/scene-content
   standalone: true,
   imports: [CommonModule, DragDropModule, FormsModule, SceneContentModalComponent],
   template: `
-    <div style="padding: 30px; font-family: sans-serif;">
-      <div *ngIf="loading" style="text-align: center; margin-top: 50px;">
-        <h2>Chargement de la pièce...</h2>
+    <div style="padding: 30px; font-family: 'Comic Sans MS', cursive, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; overflow: hidden;">
+      <button (click)="goHome()" style="position: fixed; top: 20px; left: 20px; padding: 12px 24px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 18px; font-weight: bold; z-index: 9999; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        ← Accueil
+      </button>
+      
+      <div *ngIf="loading" style="text-align: center; margin-top: 50px; color: white;">
+        <h2 style="font-size: 2.5rem;">🎭 Chargement de la pièce...</h2>
       </div>
       
-      <div *ngIf="!loading && play">
-        <div style="background-color: #f4f4f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h1 style="margin: 0; color: #333;">🎬 {{ play.title }}</h1>
-          <p style="margin: 5px 0 0 0; color: #666;">Réalisé par : <strong>{{ play.director_name }}</strong></p>
+      <div *ngIf="!loading && play" style="padding-top: 60px;">
+        <div style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 4px solid #fff;">
+          <h1 style="margin: 0; color: #d63031; font-size: 3rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">🎬 {{ play.title }}</h1>
+          <p style="margin: 10px 0 0 0; color: #2d3436; font-size: 1.3rem;">Réalisé par : <strong>{{ play.director_name }}</strong></p>
         </div>
         
-        <h2>Mes scènes</h2>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-          <button (click)="addScene()" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            + Ajouter une scène
+        <h2 style="color: white; font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 20px;">🎭 Mes scènes</h2>
+        <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+          <button (click)="addScene()" style="padding: 15px 30px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            ✨ + Ajouter une scène
           </button>
-          <button style="padding: 10px 20px; background-color: #ffc107; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            ▶ Lancer le film
+          <button (click)="playShow()" [disabled]="!hasCompletedScenes()" style="padding: 15px 30px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;" [style.opacity]="hasCompletedScenes() ? '1' : '0.5'" [style.cursor]="hasCompletedScenes() ? 'pointer' : 'not-allowed'" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            🎬 ▶ Lancer le film
           </button>
         </div>
         
@@ -38,17 +42,30 @@ import { SceneContentModalComponent } from '../scene-content-modal/scene-content
           cdkDropList 
           cdkDropListOrientation="mixed" 
           (cdkDropListDropped)="drop($event)" 
-          style="display: flex; flex-wrap: wrap; gap: 20px; min-height: 200px; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
+          style="display: flex; flex-wrap: wrap; gap: 20px; max-height: 500px; overflow-y: auto; padding: 20px; border: 2px dashed #ccc; border-radius: 8px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.5) transparent;">
           
           <div *ngIf="scenes.length === 0" style="width: 100%; text-align: center; color: #999; margin-top: 40px;">
             Aucune scène pour le moment. Cliquez sur "Ajouter une scène".
           </div>
 
-          <div *ngFor="let scene of scenes; let i = index" cdkDrag style="width: 200px; background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; cursor: grab; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" class="scene-card">
+          <div *ngFor="let scene of scenes; let i = index" cdkDrag style="width: 220px; background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%); border: 3px solid #fff; border-radius: 15px; overflow: visible; cursor: grab; box-shadow: 0 6px 20px rgba(0,0,0,0.15); transition: transform 0.2s; position: relative;" class="scene-card" onmouseover="this.style.transform='translateY(-8px) rotate(2deg)'" onmouseout="this.style.transform='translateY(0) rotate(0)'">
+            <!-- Delete button -->
+            <button (click)="deleteScene(scene.id!)" style="position: absolute; top: -8px; right: -8px; width: 30px; height: 30px; background: #dc3545; color: white; border: 2px solid white; border-radius: 50%; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 100; display: flex; align-items: center; justify-content: center;" title="Supprimer">
+              ×
+            </button>
+            
             <!-- Thumbnail -->
             <div (click)="openModal(scene)" style="height: 120px; background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #bbb; cursor: pointer; overflow: hidden; position: relative;" title="Cliquer pour configurer le contenu">
               <img *ngIf="scene.background_image" [src]="scene.background_image" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;" alt="Décor" />
               <span *ngIf="!scene.background_image">🖼️</span>
+              
+              <!-- Completion indicators -->
+              <div style="position: absolute; bottom: 4px; right: 4px; display: flex; gap: 2px; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 3px; font-size: 14px; line-height: 1;">
+                <span [style.opacity]="scene.background_image ? '1' : '0.3'" title="Décor">🖼️</span>
+                <span [style.opacity]="scene.music_path || scene.music_track ? '1' : '0.3'" title="Musique">🎵</span>
+                <span [style.opacity]="scene.sequence_data ? '1' : '0.3'" title="Mise en scène">🎭</span>
+                <span [style.opacity]="scene.audio_recording ? '1' : '0.3'" title="Audio">🎤</span>
+              </div>
             </div>
             
             <!-- Zone Titre -->
@@ -247,5 +264,35 @@ export class PlayDashboardComponent implements OnInit {
 
   cancelEdit() {
     this.editingSceneId = null;
+  }
+
+  goHome(): void {
+    this.router.navigate(['/']);
+  }
+
+  hasCompletedScenes(): boolean {
+    return this.scenes.some(s => s.sequence_data);
+  }
+
+  playShow() {
+    if (this.playId && this.hasCompletedScenes()) {
+      this.router.navigate(['/plays', this.playId, 'viewer']);
+    }
+  }
+
+  deleteScene(sceneId: number): void {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette scène ?')) {
+      return;
+    }
+
+    this.sceneService.deleteScene(sceneId).subscribe({
+      next: () => {
+        this.loadScenes();
+      },
+      error: (err) => {
+        console.error('Error deleting scene:', err);
+        alert('Erreur lors de la suppression de la scène.');
+      }
+    });
   }
 }

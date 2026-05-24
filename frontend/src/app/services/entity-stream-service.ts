@@ -25,9 +25,20 @@ export class EntityStreamService {
 
       let ws: WebSocket;
       let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+      let reconnectAttempts = 0;
+      const MAX_RECONNECT_ATTEMPTS = 3;
+      const BASE_DELAY = 2000;
 
       const connect = () => {
+        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+          return; // Stop trying after max attempts
+        }
+
         ws = new WebSocket(PUPPET_WS_URL);
+
+        ws.onopen = () => {
+          reconnectAttempts = 0; // Reset on successful connection
+        };
 
         ws.onmessage = (ev) => {
           try {
@@ -41,10 +52,18 @@ export class EntityStreamService {
 
         const scheduleReconnect = () => {
           if (reconnectTimer) clearTimeout(reconnectTimer);
-          reconnectTimer = setTimeout(connect, 1000);
+          reconnectAttempts++;
+          
+          if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            // Exponential backoff: 2s, 4s, 8s
+            const delay = BASE_DELAY * Math.pow(2, reconnectAttempts - 1);
+            reconnectTimer = setTimeout(connect, delay);
+          }
         };
 
-        ws.onerror = scheduleReconnect;
+        ws.onerror = () => {
+          scheduleReconnect();
+        };
         ws.onclose = scheduleReconnect;
       };
 

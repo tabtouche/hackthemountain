@@ -5,6 +5,7 @@ import { PlayDashboardComponent } from './play-dashboard/play-dashboard.componen
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'plays/:id', component: PlayDashboardComponent },
+  { path: 'plays/:playId/viewer', loadComponent: () => import('./play-viewer/play-viewer.component').then(m => m.PlayViewerComponent) },
   { path: 'plays/:playId/scene/:sceneId/decor', loadComponent: () => import('./background-editor/background-editor.component').then(m => m.BackgroundEditorComponent) },
   { path: 'plays/:playId/scene/:sceneId/webcam', loadComponent: () => import('./scene.component').then(m => m.SceneComponent) },
   { path: 'plays/:playId/scene/:sceneId/music', loadComponent: () => import('./music.component').then(m => m.Music) },
