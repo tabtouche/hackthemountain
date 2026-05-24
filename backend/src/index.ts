@@ -47,6 +47,7 @@ const port = 3000;
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.use('/backend_uploads', express.static(path.join(process.cwd(), 'backend_uploads')));
 
 // Charger les routes
 app.use('/api/plays', playsRouter);

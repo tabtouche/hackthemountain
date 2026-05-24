@@ -1,0 +1,214 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.music-editor {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #173f5f;
+}
+
+.music-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.music-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.back-btn {
+  background: #fde68a;
+  border: 2px solid #fbbf24;
+  border-radius: 16px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.back-btn:hover {
+  background: #fef9c3;
+}
+
+.simple-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.upload-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 72px;
+  border: 3px dashed #93c5fd;
+  border-radius: 16px;
+  background: #eff6ff;
+  cursor: pointer;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 15px;
+  gap: 8px;
+}
+
+.upload-box input {
+  display: none;
+}
+
+.upload-info {
+  margin-top: 12px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upload-info audio {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.option-card {
+  background: #f8fafc;
+  border: 2px solid #bfdbfe;
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.option-icon {
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.option-card h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.selection-box {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 14px;
+  padding: 8px 12px;
+  font-size: 15px;
+  color: #92400e;
+}
+
+.track-list {
+  display: grid;
+  gap: 10px;
+}
+
+.track-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 2px solid #dbeafe;
+  border-radius: 14px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.track-card:hover {
+  transform: translateY(-1px);
+  border-color: #93c5fd;
+}
+
+.track-card.selected {
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+
+.track-card strong {
+  display: block;
+  font-size: 16px;
+  color: #173f5f;
+}
+
+.track-card p {
+  margin: 4px 0 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.save-btn {
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 13px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.save-btn:hover {
+  background: #16a34a;
+}
+
+.selection-audio,
+.track-audio {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 10px;
+}
+
+.confirmation {
+  color: #047857;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .music-editor {
+    padding: 18px;
+  }
+
+  .music-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footer-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .save-btn {
+    width: 100%;
+  }
+}
+
+#conf {
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%, 40%);
+}

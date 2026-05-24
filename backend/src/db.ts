@@ -24,10 +24,14 @@ export const db = new sqlite3.Database(dbPath, (err) => {
       title TEXT NOT NULL,
       sequence_order INTEGER,
       background_image TEXT,
+      music_path TEXT,
+      music_track TEXT,
       FOREIGN KEY (play_id) REFERENCES Play(id)
     )`, () => {
-      // Add column for existing databases that don't have it yet
+      // Add columns for existing databases that don't have them yet
       db.run(`ALTER TABLE Scene ADD COLUMN background_image TEXT`, () => {});
+      db.run(`ALTER TABLE Scene ADD COLUMN music_path TEXT`, () => {});
+      db.run(`ALTER TABLE Scene ADD COLUMN music_track TEXT`, () => {});
     });
   }
 });
