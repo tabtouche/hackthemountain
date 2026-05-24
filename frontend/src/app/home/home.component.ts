@@ -14,7 +14,7 @@ import { SceneService } from '../services/scene.service';
   template: `
     <div style="padding: 15px; max-width: 1400px; margin: 0 auto; height: 100vh; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Comic Sans MS', cursive, sans-serif; box-sizing: border-box; display: flex; flex-direction: column;">
       <div style="text-align: center; margin-bottom: 20px; flex-shrink: 0;">
-        <h1 style="font-size: 3.5rem; color: #fff; text-shadow: 4px 4px 8px rgba(0,0,0,0.3); margin: 0; animation: bounce 2s infinite;">🎭 HackTheMountain</h1>
+        <h1 style="font-size: 3.5rem; color: #fff; text-shadow: 4px 4px 8px rgba(0,0,0,0.3); margin: 0; animation: bounce 2s infinite;">🎭 Le loup de Broadway</h1>
         <p style="font-size: 1.5rem; color: #ffeaa7; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); margin: 5px 0;">Spectacle de Marionnettes 2D</p>
         <br/>
         <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
