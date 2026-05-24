@@ -1,23 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-export interface Entity {
-  animal: 'rabbit' | 'wolf' | string;
-  x: number;
-  y: number;
-  orientation: number;
-  angleMouth: number;
-  facing: 'left' | 'right' | string;
-}
-
 const PUPPET_WS_URL = 'ws://localhost:8765';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class EntityStreamService {
-  stream(): Observable<Entity[]> {
-    return new Observable<Entity[]>(observer => {
+@Injectable({ providedIn: 'root' })
+export class VideoStreamService {
+  stream(): Observable<string> {
+    return new Observable<string>(observer => {
       if (typeof window === 'undefined' || !('WebSocket' in window)) {
         observer.complete();
         return;
@@ -32,9 +21,10 @@ export class EntityStreamService {
         ws.onmessage = (ev) => {
           try {
             const msg = JSON.parse(ev.data);
-            if (msg.type === 'frame') return;
-            observer.next([msg as Entity]);
-          } catch { /* ignore malformed frames */ }
+            if (msg.type === 'frame' && msg.data) {
+              observer.next(`data:image/jpeg;base64,${msg.data}`);
+            }
+          } catch { /* ignore */ }
         };
 
         const scheduleReconnect = () => {
@@ -48,7 +38,6 @@ export class EntityStreamService {
 
       connect();
 
-      // Teardown: close WS and cancel any pending reconnect
       return () => {
         if (reconnectTimer) clearTimeout(reconnectTimer);
         ws?.close();

@@ -24,12 +24,14 @@ class HandTracker:
         camera_index: int = 0,
         show_preview: bool = True,
         max_hands: int = 2,
+        frame_callback: Callable | None = None,
     ):
         self.callback = callback
         self.model_path = model_path
         self.camera_index = camera_index
         self.show_preview = show_preview
         self.max_hands = max_hands
+        self.frame_callback = frame_callback
 
         self._annotated_frame = None
         self._annotated_lock = threading.Lock()
@@ -48,6 +50,9 @@ class HandTracker:
     # MediaPipe callback
     # ------------------------------------------------------------------
     def _on_result(self, result, output_image: mp.Image, timestamp_ms: int):
+        n = len(result.hand_landmarks) if result.hand_landmarks else 0
+        if n > 0:
+            print(f"[tracker] detected {n} hand(s)", flush=True)
         if self.show_preview:
             self._update_preview(result, output_image)
 
@@ -104,11 +109,19 @@ class HandTracker:
         self._running = True
         with HandLandmarker.create_from_options(options) as landmarker:
             cap = cv2.VideoCapture(self.camera_index)
+            print(f"[tracker] camera index={self.camera_index} opened={cap.isOpened()}", flush=True)
             try:
+                frame_count = 0
                 while self._running and cap.isOpened():
                     success, frame = cap.read()
                     if not success:
+                        print("[tracker] cap.read() failed", flush=True)
                         continue
+                    frame_count += 1
+                    if frame_count == 1:
+                        print("[tracker] first frame captured, starting detection", flush=True)
+                    if self.frame_callback is not None and frame_count % 2 == 0:
+                        self.frame_callback(frame)
 
                     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)

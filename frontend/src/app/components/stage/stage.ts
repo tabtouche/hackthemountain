@@ -1,4 +1,5 @@
-import { Component, ElementRef, ViewChild, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, OnDestroy, AfterViewInit, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { EntityStreamService, Entity } from '../../services/entity-stream-service';
 import { Subscription } from 'rxjs';
 
@@ -21,7 +22,9 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy {
   private rabbitLoaded = false;
   private wolfLoaded = false;
 
-  constructor(private entityStream: EntityStreamService) {} 
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  constructor(private entityStream: EntityStreamService) {}
 
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
@@ -52,9 +55,10 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    if (!this.isBrowser) return;
     const canvas = this.canvasRef.nativeElement;
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;    // résolution interne = taille CSS réelle
+    canvas.width = rect.width;
     canvas.height = rect.height;
     this.startAnimation();
   }
@@ -132,34 +136,36 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy {
       ctx.stroke();
     }
 
-    // Draw entities
+    // Draw entities with orientation and facing
     this.entities.forEach((e) => {
       const x = (e.x / 100) * canvas.width;
       const y = canvas.height - (e.y / 100) * canvas.height;
-
       const size = 80;
-      const drawX = x - size / 2;
-      const drawY = y - size / 2;
 
-      let img: HTMLImageElement | null = null;
+      const img = e.animal === 'rabbit'
+        ? (this.rabbitLoaded ? this.rabbitImg : null)
+        : (this.wolfLoaded ? this.wolfImg : null);
 
-      if (e.animal === 'rabbit') {
-        img = this.rabbitLoaded ? this.rabbitImg : null;
-      } else if (e.animal === 'wolf') {
-        img = this.wolfLoaded ? this.wolfImg : null;
-      }
+      ctx.save();
+      ctx.translate(x, y);
+      // Derive facing from orientation angle (avoids camera-mirror mismatch on the `facing` field).
+      // orientation is in canvas space: 0=right, π/2=down, ±π=left.
+      // For left-facing: subtract π so the base angle stays small, then flip horizontally.
+      const angle = e.orientation ?? 0;
+      const isLeft = Math.abs(angle) > Math.PI / 2;
+      ctx.rotate(isLeft ? angle - Math.PI : angle);
+      if (isLeft) ctx.scale(-1, 1);
 
       if (img) {
-        ctx.drawImage(img, drawX, drawY, size, size);
+        ctx.drawImage(img, -size / 2, -size / 2, size, size);
       } else {
-        ctx.fillStyle = e.animal === 'wolf' ? '#444' : '#4ecdc4';
         ctx.beginPath();
-        ctx.arc(x, y, 25, 0, Math.PI * 2);
+        ctx.arc(0, 0, 25, 0, Math.PI * 2);
+        ctx.fillStyle = e.animal === 'wolf' ? '#444' : '#4ecdc4';
         ctx.fill();
       }
 
-      ctx.strokeStyle = '#333';
-      ctx.strokeRect(drawX, drawY, size, size);
+      ctx.restore();
     });
   }
 }

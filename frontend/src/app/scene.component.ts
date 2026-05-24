@@ -1,6 +1,8 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { Stage } from './components/stage/stage';
+import { VideoStreamService } from './services/video-stream.service';
 
 @Component({
   selector: 'app-scene',
@@ -10,17 +12,21 @@ import { Stage } from './components/stage/stage';
   imports: [Stage]
 })
 export class SceneComponent implements OnInit, OnDestroy {
-  @ViewChild('video') videoRef!: ElementRef<HTMLVideoElement>;
+  @ViewChild('videoCanvas') videoCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private videoStream = inject(VideoStreamService);
 
-  mediaStream: MediaStream | null = null;
-  mediaRecorder: MediaRecorder | null = null;
-  recordedChunks: Blob[] = [];
   recording = false;
-  eventSource: EventSource | null = null;
+  isLoading = false;
+  puppetStarted = false;
+
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordedChunks: Blob[] = [];
+  private videoSubscription: Subscription | null = null;
+  private frameImg = typeof window !== 'undefined' ? new Image() : null;
 
   private sceneId: string | null = null;
   private playId: string | null = null;
@@ -33,41 +39,61 @@ export class SceneComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.stopCamera();
-    this.closeEntityStream();
+    this.stopVideo();
+    this.stopPuppetProcess();
   }
 
-  async startCamera() {
-    if (this.mediaStream) return;
+  async startCamera(): Promise<void> {
+    if (this.puppetStarted) return;
+    this.puppetStarted = true;
+    this.isLoading = true;
+    await this.startPuppetProcess();
+    this.videoSubscription = this.videoStream.stream().subscribe(dataUrl => {
+      if (this.isLoading) this.isLoading = false;
+      this.drawFrame(dataUrl);
+    });
+  }
+
+  private drawFrame(dataUrl: string): void {
+    const canvas = this.videoCanvasRef?.nativeElement;
+    if (!canvas || !this.frameImg) return;
+    this.frameImg.onload = () => {
+      if (canvas.width !== this.frameImg!.naturalWidth) {
+        canvas.width = this.frameImg!.naturalWidth;
+        canvas.height = this.frameImg!.naturalHeight;
+      }
+      canvas.getContext('2d')?.drawImage(this.frameImg!, 0, 0);
+    };
+    this.frameImg.src = dataUrl;
+  }
+
+  stopVideo(): void {
+    this.videoSubscription?.unsubscribe();
+    this.videoSubscription = null;
+    this.puppetStarted = false;
+    this.isLoading = false;
+  }
+
+  private async startPuppetProcess(): Promise<void> {
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (this.videoRef?.nativeElement) {
-        this.videoRef.nativeElement.srcObject = this.mediaStream;
-        await this.videoRef.nativeElement.play();
-      }
-      // Start entity stream now that we're in a browser user session
-      if (typeof window !== 'undefined' && typeof (window as any).EventSource !== 'undefined') {
-        if (!this.eventSource) this.startEntityStream();
-      }
-    } catch (e) {
-      console.error('Camera error', e);
-    }
+      await fetch('http://localhost:3000/api/puppet/start', { method: 'POST' });
+    } catch { }
   }
 
-  stopCamera() {
-    if (!this.mediaStream) return;
-    this.mediaStream.getTracks().forEach(t => t.stop());
-    this.mediaStream = null;
+  private stopPuppetProcess(): void {
+    fetch('http://localhost:3000/api/puppet/stop', { method: 'POST' }).catch(() => { });
   }
 
-  startRecording() {
-    if (!this.mediaStream) return;
+  startRecording(): void {
+    const canvas = this.videoCanvasRef?.nativeElement;
+    if (!canvas) return;
     this.recordedChunks = [];
+    const stream = (canvas as any).captureStream(25) as MediaStream;
     const options: MediaRecorderOptions = { mimeType: 'video/webm;codecs=vp8' };
     try {
-      this.mediaRecorder = new MediaRecorder(this.mediaStream, options);
-    } catch (e) {
-      this.mediaRecorder = new MediaRecorder(this.mediaStream as MediaStream);
+      this.mediaRecorder = new MediaRecorder(stream, options);
+    } catch {
+      this.mediaRecorder = new MediaRecorder(stream);
     }
 
     this.mediaRecorder.ondataavailable = (ev) => {
@@ -80,7 +106,6 @@ export class SceneComponent implements OnInit, OnDestroy {
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
         const filename = this.sceneId ? `scene-${this.sceneId}-${Date.now()}.webm` : `scene-${Date.now()}.webm`;
-        // upload to backend
         fetch('http://localhost:3000/api/upload-media', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -94,22 +119,22 @@ export class SceneComponent implements OnInit, OnDestroy {
     this.recording = true;
   }
 
-  pauseRecording() {
+  pauseRecording(): void {
     this.mediaRecorder?.pause();
     this.recording = false;
   }
 
-  resumeRecording() {
+  resumeRecording(): void {
     this.mediaRecorder?.resume();
     this.recording = true;
   }
 
-  stopRecording() {
+  stopRecording(): void {
     this.mediaRecorder?.stop();
     this.recording = false;
   }
 
-  restartRecording() {
+  restartRecording(): void {
     this.stopRecording();
     this.recordedChunks = [];
   }
@@ -120,52 +145,5 @@ export class SceneComponent implements OnInit, OnDestroy {
     } else {
       this.router.navigate(['/']);
     }
-  }
-
-  startEntityStream() {
-    if (typeof window === 'undefined' || typeof (window as any).EventSource === 'undefined') return;
-    if (this.eventSource) return;
-    this.eventSource = new EventSource('http://localhost:3000/stream/entities');
-    this.eventSource.onmessage = (ev) => {
-      try {
-        const data = JSON.parse(ev.data);
-        this.drawEntities(data.payload);
-      } catch (e) {
-        console.error('Invalid event data', e);
-      }
-    };
-    this.eventSource.onerror = (e) => {
-      console.error('EventSource error', e);
-      // keep it simple: close on error
-      // this.closeEntityStream();
-    };
-  }
-
-  closeEntityStream() {
-    this.eventSource?.close();
-    this.eventSource = null;
-  }
-
-  drawEntities(entities: any[]) {
-    const canvas = this.canvasRef?.nativeElement;
-    const video = this.videoRef?.nativeElement;
-    if (!canvas || !video) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // simple rendering: draw circle per entity and label
-    entities.forEach((e) => {
-      const x = (e.x / 100) * canvas.width;
-      const y = (e.y / 100) * canvas.height;
-      ctx.beginPath();
-      ctx.fillStyle = e.animal === 'wolf' ? 'rgba(255,0,0,0.6)' : 'rgba(0,200,0,0.6)';
-      ctx.arc(x, y, 30, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = '16px sans-serif';
-      ctx.fillText(e.animal, x - 20, y + 6);
-    });
   }
 }
