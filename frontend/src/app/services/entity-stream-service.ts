@@ -33,7 +33,9 @@ export class EntityStreamService {
           try {
             const msg = JSON.parse(ev.data);
             if (msg.type === 'frame') return;
-            observer.next([msg as Entity]);
+            if (msg.type === 'hands' && Array.isArray(msg.entities)) {
+              observer.next(msg.entities as Entity[]);
+            }
           } catch { /* ignore malformed frames */ }
         };
 

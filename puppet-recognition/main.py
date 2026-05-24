@@ -73,18 +73,18 @@ def on_frame(bgr_frame):
 def on_hands(hands: list[HandState], timestamp_ms: int):
     if not hands:
         return
-    hand = hands[0]
-    payload = {
-        "type": "hand",
-        "animal": hand.pose.value,
-        "x": round(hand.x * 100, 2),
-        "y": round(hand.y * 100, 2),
-        "orientation": hand.orientation,
-        "angleMouth": hand.angleMouth,
-        "facing": hand.facing.value,
-    }
-    print(f"[hand] x={payload['x']} y={payload['y']} facing={payload['facing']} orientation={round(math.degrees(payload['orientation']), 1)}°", flush=True)
-    _broadcast(payload)
+    entities = []
+    for i, hand in enumerate(hands):
+        entities.append({
+            "animal": hand.pose.value,
+            "x": round(hand.x * 100, 2),
+            "y": round(hand.y * 100, 2),
+            "orientation": hand.orientation,
+            "angleMouth": hand.angleMouth,
+            "facing": hand.facing.value,
+        })
+        print(f"[hand {i}] x={entities[-1]['x']} y={entities[-1]['y']} facing={entities[-1]['facing']} orientation={round(math.degrees(entities[-1]['orientation']), 1)}°", flush=True)
+    _broadcast({"type": "hands", "entities": entities})
 
 
 # ── Entry point ─────────────────────────────────────────────────────────────
