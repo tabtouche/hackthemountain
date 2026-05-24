@@ -55,10 +55,10 @@ scenesRouter.get('/:id', (req: Request, res: Response) => {
   });
 });
 
-// Mettre à jour une scène (titre / ordre / décor / musique)
+// Mettre à jour une scène (titre / ordre / décor / musique / screenplay / audio)
 scenesRouter.put('/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { title, sequence_order, background_image, music_path, music_track, sequence_data } = req.body;
+  const { title, sequence_order, background_image, music_path, music_track, sequence_data, audio_recording } = req.body;
 
   const updates: string[] = [];
   const params: any[] = [];
@@ -80,6 +80,9 @@ scenesRouter.put('/:id', (req: Request, res: Response) => {
   }
   if (sequence_data !== undefined) {
     updates.push('sequence_data = ?'); params.push(sequence_data);
+  }
+  if (audio_recording !== undefined) {
+    updates.push('audio_recording = ?'); params.push(audio_recording);
   }
   
   if (updates.length === 0) return res.status(400).json({ error: 'Rien à mettre à jour' });

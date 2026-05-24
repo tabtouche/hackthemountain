@@ -26,6 +26,7 @@ export const db = new sqlite3.Database(dbPath, (err) => {
       background_image TEXT,
       music_path TEXT,
       music_track TEXT,
+      audio_recording TEXT,
       FOREIGN KEY (play_id) REFERENCES Play(id)
     )`, () => {
       // Add columns for existing databases that don't have them yet
@@ -33,6 +34,7 @@ export const db = new sqlite3.Database(dbPath, (err) => {
       db.run(`ALTER TABLE Scene ADD COLUMN music_path TEXT`, () => {});
       db.run(`ALTER TABLE Scene ADD COLUMN music_track TEXT`, () => {});
       db.run(`ALTER TABLE Scene ADD COLUMN sequence_data TEXT`, () => {});
+      db.run(`ALTER TABLE Scene ADD COLUMN audio_recording TEXT`, () => {});
     });
   }
 });

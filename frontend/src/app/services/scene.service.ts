@@ -11,6 +11,8 @@ export interface Scene {
   background_image?: string;
   music_path?: string;
   music_track?: string;
+  audio_recording?: string;
+  sequence_data?: string;
 }
 
 @Injectable({
@@ -56,6 +58,10 @@ export class SceneService {
 
   saveSequence(id: number, sequenceData: string): Observable<Scene> {
     return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { sequence_data: sequenceData });
+  }
+
+  saveAudioRecording(id: number, audioRecording: string): Observable<Scene> {
+    return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { audio_recording: audioRecording });
   }
 
   // Permet de sauvegarder l'ordre en une seule requête suite à un drag & drop

@@ -6,6 +6,7 @@ import { VideoStreamService } from './services/video-stream.service';
 import { EntityStreamService, Entity } from './services/entity-stream-service';
 import { SequenceRecorderService, Sequence } from './services/sequence-recorder.service';
 import { SceneService } from './services/scene.service';
+import { AudioRecorderService, AudioRecording } from './services/audio-recorder.service';
 
 type RecordingState = 'idle' | 'recording' | 'paused' | 'preview';
 
@@ -25,6 +26,7 @@ export class SceneComponent implements OnInit, OnDestroy {
   private entityStream = inject(EntityStreamService);
   private recorder = inject(SequenceRecorderService);
   private sceneService = inject(SceneService);
+  private audioRecorder = inject(AudioRecorderService);
 
   // Camera
   cameraActive = false;
@@ -36,6 +38,7 @@ export class SceneComponent implements OnInit, OnDestroy {
   // Recording
   recordingState: RecordingState = 'idle';
   currentSequence: Sequence | null = null;
+  currentAudioRecording: AudioRecording | null = null;
   saving = false;
 
   // Preview playback
@@ -49,6 +52,7 @@ export class SceneComponent implements OnInit, OnDestroy {
   private entitySubscription: Subscription | null = null;
   private previewTimer: ReturnType<typeof setTimeout> | null = null;
   private frameImg = typeof window !== 'undefined' ? new Image() : null;
+  private audioElement: HTMLAudioElement | null = null;
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -120,9 +124,15 @@ export class SceneComponent implements OnInit, OnDestroy {
 
   // ── Recording ────────────────────────────────────────────────────────────
 
-  startRecording(): void {
-    this.recorder.start();
-    this.recordingState = 'recording';
+  async startRecording(): Promise<void> {
+    try {
+      await this.audioRecorder.startRecording();
+      this.recorder.start();
+      this.recordingState = 'recording';
+    } catch (error) {
+      console.error('Failed to start audio recording:', error);
+      alert('Could not access microphone. Please grant permission and try again.');
+    }
   }
 
   pauseRecording(): void {
@@ -135,12 +145,19 @@ export class SceneComponent implements OnInit, OnDestroy {
     this.recordingState = 'recording';
   }
 
-  stopRecording(): void {
+  async stopRecording(): Promise<void> {
     this.currentSequence = this.recorder.stop();
+    try {
+      this.currentAudioRecording = await this.audioRecorder.stopRecording();
+    } catch (error) {
+      console.error('Failed to stop audio recording:', error);
+      this.currentAudioRecording = null;
+    }
     this.recordingState = 'preview';
     this.previewCurrentFrameIndex = 0;
     this.previewPlaying = true;
     this.previewEntities = this.currentSequence.frames[0]?.entities ?? [];
+    this.setupAudioPlayback();
     this.scheduleNextFrame();
   }
 
@@ -148,6 +165,10 @@ export class SceneComponent implements OnInit, OnDestroy {
     this.clearPreviewTimer();
     this.recorder.reset();
     this.currentSequence = null;
+    if (this.currentAudioRecording) {
+      URL.revokeObjectURL(this.currentAudioRecording.url);
+      this.currentAudioRecording = null;
+    }
     this.recordingState = 'idle';
     this.stageEntities = [];
     this.previewEntities = [];
@@ -182,8 +203,10 @@ export class SceneComponent implements OnInit, OnDestroy {
   togglePreviewPlayback(): void {
     this.previewPlaying = !this.previewPlaying;
     if (this.previewPlaying) {
+      this.audioElement?.play();
       this.scheduleNextFrame();
     } else {
+      this.audioElement?.pause();
       this.clearPreviewTimer();
     }
   }
@@ -194,6 +217,9 @@ export class SceneComponent implements OnInit, OnDestroy {
     this.previewPlaying = false;
     this.previewCurrentFrameIndex = index;
     this.previewEntities = this.currentSequence.frames[index]?.entities ?? [];
+    if (this.audioElement && this.currentSequence.frames[index]) {
+      this.audioElement.currentTime = this.currentSequence.frames[index].t / 1000;
+    }
   }
 
   onSeekInput(event: Event): void {
@@ -219,13 +245,31 @@ export class SceneComponent implements OnInit, OnDestroy {
 
   // ── Validate / delete ────────────────────────────────────────────────────
 
-  validateSequence(): void {
+  async validateSequence(): Promise<void> {
     if (!this.currentSequence || !this.sceneId) return;
     this.saving = true;
-    this.sceneService.saveSequence(Number(this.sceneId), JSON.stringify(this.currentSequence)).subscribe({
-      next: () => { this.saving = false; this.finishPreview(); },
-      error: () => { this.saving = false; }
-    });
+    
+    try {
+      // Save sequence data
+      await this.sceneService.saveSequence(Number(this.sceneId), JSON.stringify(this.currentSequence)).toPromise();
+      
+      // Save audio recording if available
+      if (this.currentAudioRecording) {
+        const reader = new FileReader();
+        const audioDataUrl = await new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(this.currentAudioRecording!.blob);
+        });
+        await this.sceneService.saveAudioRecording(Number(this.sceneId), audioDataUrl).toPromise();
+      }
+      
+      this.saving = false;
+      this.finishPreview();
+    } catch (error) {
+      console.error('Failed to save sequence:', error);
+      this.saving = false;
+    }
   }
 
   deleteSequence(): void {
@@ -234,8 +278,13 @@ export class SceneComponent implements OnInit, OnDestroy {
 
   private finishPreview(): void {
     this.clearPreviewTimer();
+    this.cleanupAudioPlayback();
     this.recorder.reset();
     this.currentSequence = null;
+    if (this.currentAudioRecording) {
+      URL.revokeObjectURL(this.currentAudioRecording.url);
+      this.currentAudioRecording = null;
+    }
     this.recordingState = 'idle';
     this.stageEntities = [];
     this.previewEntities = [];
@@ -261,6 +310,23 @@ export class SceneComponent implements OnInit, OnDestroy {
 
   get totalFrames(): number {
     return this.currentSequence?.frames.length ?? 0;
+  }
+
+  private setupAudioPlayback(): void {
+    this.cleanupAudioPlayback();
+    if (this.currentAudioRecording) {
+      this.audioElement = new Audio(this.currentAudioRecording.url);
+      this.audioElement.loop = true;
+      this.audioElement.play().catch(err => console.error('Audio playback failed:', err));
+    }
+  }
+
+  private cleanupAudioPlayback(): void {
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement.src = '';
+      this.audioElement = null;
+    }
   }
 
   goBack(): void {
