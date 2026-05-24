@@ -1,9 +1,13 @@
 from classifier.always_rabbit import AlwaysRabbitClassifier
+from classifier.always_wolf import AlwaysWolfClassifier
+from data.pose import Pose
 from data.raw_hand import RawHand
 from hand_tracker import HandTracker
 from data.hand_state import HandState
 from interpreter.interpreter import interpret_landmarks
 from landmark_normalizer import LandmarkNormalizer
+
+POSE: Pose = Pose.WOLF
 
 def on_hands(hands: list[HandState], timestamp_ms: int):
     if not hands:
@@ -22,7 +26,11 @@ def on_hands(hands: list[HandState], timestamp_ms: int):
 
 if __name__ == "__main__":
     normalizer = LandmarkNormalizer()
-    classifier = AlwaysRabbitClassifier()
+    match POSE:
+        case Pose.RABBIT:
+            classifier = AlwaysRabbitClassifier()
+        case Pose.WOLF:
+            classifier = AlwaysWolfClassifier()
     
     def on_raw_hands(raw_hands: list[RawHand], timestamp_ms: int):
         states = [
