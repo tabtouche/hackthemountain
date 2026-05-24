@@ -15,7 +15,7 @@ _INTERPRETERS = {
 
 def interpret_landmarks(hand: RawHand, normalizer: LandmarkNormalizer, classifier: HandClassifier) -> HandState | None:
     normalized = normalizer.normalize(hand.landmarks)
-    pose, confidence = classifier.classify(normalized)
+    pose, confidence = classifier.classify(normalized, hand)
 
     interpreter = _INTERPRETERS.get(pose)
     if interpreter is None:

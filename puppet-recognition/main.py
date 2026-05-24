@@ -1,5 +1,8 @@
+from typing import Optional
+
 from classifier.always_rabbit import AlwaysRabbitClassifier
 from classifier.always_wolf import AlwaysWolfClassifier
+from classifier.model import Model
 from data.pose import Pose
 from data.raw_hand import RawHand
 from hand_tracker import HandTracker
@@ -7,7 +10,8 @@ from data.hand_state import HandState
 from interpreter.interpreter import interpret_landmarks
 from landmark_normalizer import LandmarkNormalizer
 
-POSE: Pose = Pose.WOLF
+POSE: Pose = Pose.WOLF # Pose.UNKNOWN
+MODEL = "hand_landmarker.task" # "gesture_recognizer.task"
 
 def on_hands(hands: list[HandState], timestamp_ms: int):
     if not hands:
@@ -31,6 +35,8 @@ if __name__ == "__main__":
             classifier = AlwaysRabbitClassifier()
         case Pose.WOLF:
             classifier = AlwaysWolfClassifier()
+        case Pose.UNKNOWN:
+            classifier = Model()
     
     def on_raw_hands(raw_hands: list[RawHand], timestamp_ms: int):
         states = [
@@ -40,5 +46,5 @@ if __name__ == "__main__":
         ]
         on_hands(states, timestamp_ms)
 
-    tracker = HandTracker(callback=on_raw_hands, show_preview=True, max_hands=2)
+    tracker = HandTracker(callback=on_raw_hands, show_preview=True, max_hands=2, model_path=MODEL)
     tracker.run()
