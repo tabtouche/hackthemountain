@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { SceneService } from './services/scene.service';
 import { AlertModalComponent } from './components/alert-modal/alert-modal.component';
+import { TRACK_URLS } from './music-tracks';
 
 interface Track {
   id: string;
@@ -44,21 +45,21 @@ export class Music implements OnInit {
     this.availableTracks = [
       {
         id: 'magie',
-        title: 'Rêve magique',
-        description: 'Calme et doux.',
-        audioUrl: this.buildToneDataUrl(330)
+        title: 'Opening theme',
+        description: 'Joyeux et entraînant.',
+        audioUrl: TRACK_URLS['magie']
       },
       {
         id: 'aventure',
-        title: 'Aventure',
-        description: 'Rapide et drôle.',
-        audioUrl: this.buildToneDataUrl(550)
+        title: 'Soirée pluvieuse',
+        description: 'Doux et mélancolique.',
+        audioUrl: TRACK_URLS['aventure']
       },
       {
         id: 'cocasse',
-        title: 'Rigolo',
-        description: 'Joyeux et sauteur.',
-        audioUrl: this.buildToneDataUrl(770)
+        title: 'Nuit enneigée',
+        description: 'Calme et hivernal.',
+        audioUrl: TRACK_URLS['cocasse']
       }
     ];
   }
