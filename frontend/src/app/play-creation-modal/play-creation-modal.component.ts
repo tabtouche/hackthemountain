@@ -3,11 +3,12 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router } from '@angular/router';
 import { PlayService } from '../services/play.service';
 import { CommonModule } from '@angular/common';
+import { AlertModalComponent } from '../components/alert-modal/alert-modal.component';
 
 @Component({
   selector: 'app-play-creation-modal',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, AlertModalComponent],
   template: `
     <div class="modal-backdrop">
       <div class="modal-content">
@@ -30,6 +31,20 @@ import { CommonModule } from '@angular/common';
         </form>
       </div>
     </div>
+    
+    <!-- Alert Modal -->
+    <app-alert-modal 
+      *ngIf="alertConfig"
+      [title]="alertConfig.title"
+      [message]="alertConfig.message"
+      [icon]="alertConfig.icon"
+      [confirmText]="alertConfig.confirmText"
+      [cancelText]="alertConfig.cancelText"
+      [showCancel]="alertConfig.showCancel"
+      (confirm)="alertConfig.onConfirm()"
+      (cancel)="alertConfig.onCancel()"
+      (close)="alertConfig = null">
+    </app-alert-modal>
   `,
   styles: [`
     .modal-backdrop {
@@ -54,6 +69,7 @@ export class PlayCreationModalComponent {
   @Output() close = new EventEmitter<void>();
   playForm: FormGroup;
   isLoading = false;
+  alertConfig: any = null;
 
   constructor(private fb: FormBuilder, private playService: PlayService, private router: Router) {
     // Initialisation du formulaire réactif avec validation requise
@@ -76,7 +92,15 @@ export class PlayCreationModalComponent {
         error: (err) => {
           console.error('Erreur lors de la création:', err);
           this.isLoading = false;
-          alert('Erreur lors de la création de la pièce.');
+          this.alertConfig = {
+            title: 'Erreur',
+            message: 'Erreur lors de la création de la pièce.',
+            icon: '❌',
+            confirmText: 'OK',
+            showCancel: false,
+            onConfirm: () => {},
+            onCancel: () => {}
+          };
         }
       });
     }

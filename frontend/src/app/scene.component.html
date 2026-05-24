@@ -97,12 +97,26 @@
 
       <!-- Validate / delete -->
       <div class="modal-actions">
-        <button class="btn-validate" (click)="validateSequence()" [disabled]="saving">
+        <button class="btn-validate fancy" (click)="validateSequence()" [disabled]="saving">
           {{ saving ? 'Sauvegarde...' : '✓ Valider' }}
         </button>
-        <button class="btn-delete" (click)="deleteSequence()">✕ Supprimer</button>
+        <button *ngIf="(ui.manageMode$ | async)" class="btn-delete btn-x" (click)="deleteSequence()">✕ Supprimer</button>
       </div>
 
     </div>
   </div>
 }
+
+<!-- Alert Modal -->
+<app-alert-modal 
+  *ngIf="alertConfig"
+  [title]="alertConfig.title"
+  [message]="alertConfig.message"
+  [icon]="alertConfig.icon"
+  [confirmText]="alertConfig.confirmText"
+  [cancelText]="alertConfig.cancelText"
+  [showCancel]="alertConfig.showCancel"
+  (confirm)="alertConfig.onConfirm()"
+  (cancel)="alertConfig.onCancel()"
+  (close)="alertConfig = null">
+</app-alert-modal>

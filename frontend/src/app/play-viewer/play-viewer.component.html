@@ -5,19 +5,14 @@
     <div class="loading">Chargement...</div>
   }
 
-  @if (!isLoading && scenes.length === 0) {
-    <div class="empty-state">
-      <p>Aucune scène enregistrée pour cette pièce.</p>
-      <button (click)="goBack()">Retour</button>
-    </div>
-  }
-
-  @if (!isLoading && (scenes.length > 0 || showingTitleCard)) {
-    <!-- Scene info -->
-    <div class="scene-info">
-      <h2>{{ showingTitleCard ? playTitle : currentScene?.title }}</h2>
-      <p class="scene-progress">{{ sceneProgress }}</p>
-    </div>
+  @if (!isLoading && scenes.length > 0) {
+    <!-- Scene info (only show when not on title card) -->
+    @if (!showingTitleCard) {
+      <div class="scene-info">
+        <h2>{{ currentScene?.title }}</h2>
+        <p class="scene-progress">{{ sceneProgress }}</p>
+      </div>
+    }
 
     <!-- Title Card or Stage -->
     @if (showingTitleCard) {
@@ -29,7 +24,14 @@
       </div>
     } @else {
       <div class="stage-container" [style.background-image]="getBackgroundStyle()">
-        <app-stage [entities]="stageEntities" [hasBackground]="hasBackground"></app-stage>
+        @if (currentSequence && currentSequence.frames.length > 0) {
+          <app-stage [entities]="stageEntities" [hasBackground]="hasBackground"></app-stage>
+        } @else {
+          <div class="empty-state-overlay">
+            <p>Aucune scène enregistrée pour cette pièce.</p>
+            <button (click)="goBack()">Retour</button>
+          </div>
+        }
       </div>
     }
 

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { SceneService } from './services/scene.service';
+import { AlertModalComponent } from './components/alert-modal/alert-modal.component';
 
 interface Track {
   id: string;
@@ -15,7 +16,7 @@ interface Track {
 @Component({
   selector: 'app-music',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AlertModalComponent],
   templateUrl: './music.component.html',
   styleUrls: ['./music.component.css'],
 })
@@ -28,6 +29,7 @@ export class Music implements OnInit {
   currentSelectionLabel: string | null = null;
   confirmationMessage = '';
   isSaving = false;
+  alertConfig: any = null;
   loadingScene = false;
 
   availableTracks: Track[] = [];
@@ -213,8 +215,18 @@ export class Music implements OnInit {
         : `Musique choisie et enregistrée !`;
       
       // Show popup and navigate back
-      alert(message);
-      this.goBack();
+      this.alertConfig = {
+        title: 'Succès',
+        message: message,
+        icon: '🎵',
+        confirmText: 'OK',
+        showCancel: false,
+        autoDismiss: 2000,
+        onConfirm: () => {
+          this.goBack();
+        },
+        onCancel: () => {}
+      };
     } catch (err) {
       console.error(err);
       this.confirmationMessage = 'Erreur lors de l’enregistrement de la musique.';

@@ -2,11 +2,14 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@an
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Stage } from './components/stage/stage';
+import { CommonModule } from '@angular/common';
 import { VideoStreamService } from './services/video-stream.service';
 import { EntityStreamService, Entity } from './services/entity-stream-service';
 import { SequenceRecorderService, Sequence } from './services/sequence-recorder.service';
 import { SceneService } from './services/scene.service';
 import { AudioRecorderService, AudioRecording } from './services/audio-recorder.service';
+import { AlertModalComponent } from './components/alert-modal/alert-modal.component';
+import { UiService } from './services/ui.service';
 
 type RecordingState = 'idle' | 'recording' | 'paused' | 'preview';
 
@@ -15,7 +18,7 @@ type RecordingState = 'idle' | 'recording' | 'paused' | 'preview';
   templateUrl: './scene.component.html',
   styleUrls: ['./scene.component.css'],
   standalone: true,
-  imports: [Stage]
+  imports: [CommonModule, Stage, AlertModalComponent]
 })
 export class SceneComponent implements OnInit, OnDestroy {
   @ViewChild('videoCanvas') videoCanvasRef!: ElementRef<HTMLCanvasElement>;
@@ -27,6 +30,7 @@ export class SceneComponent implements OnInit, OnDestroy {
   private recorder = inject(SequenceRecorderService);
   private sceneService = inject(SceneService);
   private audioRecorder = inject(AudioRecorderService);
+  public ui = inject(UiService);
 
   // Camera
   cameraActive = false;
@@ -56,6 +60,7 @@ export class SceneComponent implements OnInit, OnDestroy {
   private backgroundMusicElement: HTMLAudioElement | null = null;
   backgroundImage: string | null = null;
   musicPath: string | null = null;
+  alertConfig: any = null;
   
   get hasBackground(): boolean {
     return !!this.backgroundImage;
@@ -172,7 +177,15 @@ export class SceneComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error('Failed to start audio recording:', error);
-      alert('Could not access microphone. Please grant permission and try again.');
+      this.alertConfig = {
+        title: 'Erreur de microphone',
+        message: 'Impossible d\'accéder au microphone.\nVeuillez accorder la permission et réessayer.',
+        icon: '🎤',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {},
+        onCancel: () => {}
+      };
     }
   }
 
@@ -214,7 +227,15 @@ export class SceneComponent implements OnInit, OnDestroy {
     
     // Check if any frames were recorded
     if (!this.currentSequence || this.currentSequence.frames.length === 0) {
-      alert('⚠️ Aucune image enregistrée!\n\nLe serveur de suivi des marionnettes (ws://localhost:8765) ne semble pas être en cours d\'exécution.\n\nVeuillez démarrer le serveur de suivi pour enregistrer les mouvements des marionnettes.');
+      this.alertConfig = {
+        title: 'Aucune image enregistrée',
+        message: 'Le serveur de suivi des marionnettes (ws://localhost:8765) ne semble pas être en cours d\'exécution.\n\nVeuillez démarrer le serveur de suivi pour enregistrer les mouvements des marionnettes.',
+        icon: '⚠️',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => {},
+        onCancel: () => {}
+      };
       this.restartRecording();
       return;
     }

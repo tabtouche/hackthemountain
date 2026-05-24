@@ -47,3 +47,17 @@
     <p class="confirmation" *ngIf="confirmationMessage">{{ confirmationMessage }}</p>
   </div>
 </div>
+
+<!-- Alert Modal -->
+<app-alert-modal 
+  *ngIf="alertConfig"
+  [title]="alertConfig.title"
+  [message]="alertConfig.message"
+  [icon]="alertConfig.icon"
+  [confirmText]="alertConfig.confirmText"
+  [cancelText]="alertConfig.cancelText"
+  [showCancel]="alertConfig.showCancel"
+  (confirm)="alertConfig.onConfirm()"
+  (cancel)="alertConfig.onCancel()"
+  (close)="alertConfig = null">
+</app-alert-modal>
