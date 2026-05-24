@@ -1,0 +1,63 @@
+<div class="music-editor">
+  <div class="music-header">
+    <button class="back-btn" (click)="goBack()">← Retour</button>
+    <h1>🎵 Choisis ta musique</h1>
+  </div>
+
+  <section class="panel simple-panel">
+      <label class="upload-box">
+        <input type="file" accept="audio/*" (change)="onFileSelected($event)" />
+        <span> 📁 Upload une chanson</span>
+      </label>
+      <div class="upload-info" *ngIf="uploadedFile">
+        <strong>{{ uploadedFile.name }}</strong>
+        <audio *ngIf="uploadedAudioUrl" [src]="uploadedAudioUrl" controls></audio>
+      </div>
+
+    <div class="option-card choose-card">
+      <div class="option-icon">🎵</div>
+      <h2>Choisis une musique</h2>
+      <div class="track-list">
+        <button
+          class="track-card"
+          *ngFor="let track of availableTracks"
+          [class.selected]="selectedTrack?.id === track.id"
+          (click)="selectTrack(track)">
+          <div>
+            <strong>{{ track.title }}</strong>
+            <p>{{ track.description }}</p>
+          </div>
+          <span *ngIf="selectedTrack?.id === track.id">✓</span>
+          <audio
+            *ngIf="track.audioUrl"
+            [src]="track.audioUrl"
+            controls
+            preload="none"
+            class="track-audio"
+            (click)="$event.stopPropagation()"
+          ></audio>
+        </button>
+      </div>
+    </div>
+  </section>
+  <div id="conf">
+    <button class="save-btn" (click)="saveSelection()" [disabled]="isSaving">
+      {{ isSaving ? 'Enregistrement...' : 'OK' }}
+    </button>
+    <p class="confirmation" *ngIf="confirmationMessage">{{ confirmationMessage }}</p>
+  </div>
+</div>
+
+<!-- Alert Modal -->
+<app-alert-modal 
+  *ngIf="alertConfig"
+  [title]="alertConfig.title"
+  [message]="alertConfig.message"
+  [icon]="alertConfig.icon"
+  [confirmText]="alertConfig.confirmText"
+  [cancelText]="alertConfig.cancelText"
+  [showCancel]="alertConfig.showCancel"
+  (confirm)="alertConfig.onConfirm()"
+  (cancel)="alertConfig.onCancel()"
+  (close)="alertConfig = null">
+</app-alert-modal>

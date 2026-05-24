@@ -1,0 +1,48 @@
+<button class="btn-back" (click)="goBack()">←</button>
+
+<div class="viewer-root">
+  @if (isLoading) {
+    <div class="loading">Chargement...</div>
+  }
+
+  @if (!isLoading && scenes.length > 0) {
+    <!-- Scene info (only show when not on title card) -->
+    @if (!showingTitleCard) {
+      <div class="scene-info">
+        <h2>{{ currentScene?.title }}</h2>
+        <p class="scene-progress">{{ sceneProgress }}</p>
+      </div>
+    }
+
+    <!-- Title Card or Stage -->
+    @if (showingTitleCard) {
+      <div class="stage-container title-card" [style.background-image]="getTitleCardBackground()">
+        <div class="title-card-content">
+          <h1 class="title-card-title">{{ playTitle }}</h1>
+          <p class="title-card-director">Produit par {{ playDirector }}</p>
+        </div>
+      </div>
+    } @else {
+      <div class="stage-container" [style.background-image]="getBackgroundStyle()">
+        @if (currentSequence && currentSequence.frames.length > 0) {
+          <app-stage [entities]="stageEntities" [hasBackground]="hasBackground"></app-stage>
+        } @else {
+          <div class="empty-state-overlay">
+            <p>Aucune scène enregistrée pour cette pièce.</p>
+            <button (click)="goBack()">Retour</button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Playback controls -->
+    <div class="controls">
+      @if (!isPlaying) {
+        <button class="btn-play" (click)="play()" title="Lire">▶</button>
+      } @else {
+        <button class="btn-pause" (click)="pause()" title="Pause">⏸</button>
+      }
+      <button class="btn-restart" (click)="restart()" title="Recommencer">↺</button>
+    </div>
+  }
+</div>

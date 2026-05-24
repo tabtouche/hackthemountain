@@ -1,0 +1,150 @@
+<!-- Back button — fixed top-left -->
+<button class="btn-back" (click)="goBack()">←</button>
+
+<div class="scene-root">
+
+  <!-- Camera preview -->
+  <div class="camera-wrapper">
+    <canvas #videoCanvas class="video-canvas"></canvas>
+    @if (isLoading) {
+      <div class="loading-overlay">Démarrage...</div>
+    }
+
+    <!-- Camera toggle — icon overlay on canvas -->
+    <button class="btn-camera-toggle"
+            [class.active]="cameraActive"
+            (click)="toggleCamera()"
+            [title]="cameraActive ? 'Arrêter la caméra' : 'Démarrer la caméra'">
+      @if (!cameraActive) { 📷 }
+      @else { ⏻ }
+    </button>
+  </div>
+
+  <!-- Hand tutorial -->
+<div class="hand-tutorial" [class.expanded]="tutorialExpanded">
+  <button class="tutorial-toggle" (click)="tutorialExpanded = !tutorialExpanded">
+    <span>👐 Comment positionner vos mains</span>
+    <span class="tutorial-chevron">{{ tutorialExpanded ? '▲' : '▼' }}</span>
+  </button>
+
+  <div class="tutorial-body">
+    <div class="tutorial-cards">
+
+      <div class="tutorial-card">
+        <img src="assets/main_loup.png" alt="Position main loup" class="tutorial-img" />
+        <div class="tutorial-info">
+          <span class="tutorial-name">🐺 Le Loup</span>
+        </div>
+      </div>
+
+      <div class="tutorial-card">
+        <img src="assets/main_lapin.png" alt="Position main lapin" class="tutorial-img" />
+        <div class="tutorial-info">
+          <span class="tutorial-name">🐇 Le Lapin</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+  <!-- Recording controls -->
+  <div class="controls">
+    @if (recordingState === 'idle') {
+      <button class="btn-record" (click)="startRecording()" [disabled]="!cameraActive" title="Enregistrer">
+        <span class="icon-record"></span>
+      </button>
+    }
+
+    @if (recordingState === 'recording' || recordingState === 'paused') {
+      <button class="btn-stop" (click)="stopRecording()" title="Arrêter">
+        <span class="icon-stop"></span>
+      </button>
+
+      @if (recordingState === 'recording') {
+        <button class="btn-pause" (click)="pauseRecording()" title="Pause">
+          <span class="icon-pause"></span>
+        </button>
+      }
+      @if (recordingState === 'paused') {
+        <button class="btn-resume" (click)="resumeRecording()" title="Reprendre">
+          <span class="icon-play"></span>
+        </button>
+        <span class="paused-label">En pause</span>
+      }
+
+      <button class="btn-restart" (click)="restartRecording()" title="Recommencer">
+        <span class="icon-restart"></span>
+      </button>
+    }
+
+    @if (recordingState === 'recording') {
+      <span class="rec-indicator">● REC</span>
+    }
+  </div>
+
+  <!-- Live stage -->
+  <div class="stage-wrapper" [style.background-image]="backgroundImage ? 'url(' + backgroundImage + ')' : 'none'" [style.background-size]="'cover'" [style.background-position]="'center'">
+    <app-stage [entities]="stageEntities" [hasBackground]="hasBackground"></app-stage>
+  </div>
+
+</div>
+
+<!-- Preview modal -->
+@if (recordingState === 'preview' && currentSequence) {
+  <div class="modal-backdrop">
+    <div class="modal">
+
+      <div class="modal-header">
+        <h2>Séquence — {{ durationLabel }}</h2>
+        <button class="btn-restart-modal" (click)="restartRecording()" title="Recommencer">↺</button>
+      </div>
+
+      <!-- Stage preview -->
+      <div class="preview-stage-wrapper" [style.background-image]="backgroundImage ? 'url(' + backgroundImage + ')' : 'none'" [style.background-size]="'cover'" [style.background-position]="'center'">
+        <app-stage [entities]="previewEntities" [hasBackground]="hasBackground"></app-stage>
+      </div>
+
+      <!-- Playback controls -->
+      <div class="playback-controls">
+        <button class="pb-btn" (click)="stepBack()" title="Reculer">⏮</button>
+
+        <button class="pb-btn pb-playpause" (click)="togglePreviewPlayback()">
+          @if (previewPlaying) { ⏸ } @else { ▶ }
+        </button>
+
+        <button class="pb-btn" (click)="stepForward()" title="Avancer">⏭</button>
+
+        <span class="pb-time">{{ previewTimeLabel }} / {{ durationLabel }}</span>
+      </div>
+
+      <input class="seek-slider" type="range"
+             min="0" [max]="totalFrames - 1"
+             [value]="previewCurrentFrameIndex"
+             (input)="onSeekInput($event)" />
+
+      <!-- Validate / delete -->
+      <div class="modal-actions">
+        <button class="btn-validate fancy" (click)="validateSequence()" [disabled]="saving">
+          {{ saving ? 'Sauvegarde...' : '✓ Valider' }}
+        </button>
+        <button *ngIf="(ui.manageMode$ | async)" class="btn-delete btn-x" (click)="deleteSequence()">✕ Supprimer</button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- Alert Modal -->
+<app-alert-modal 
+  *ngIf="alertConfig"
+  [title]="alertConfig.title"
+  [message]="alertConfig.message"
+  [icon]="alertConfig.icon"
+  [confirmText]="alertConfig.confirmText"
+  [cancelText]="alertConfig.cancelText"
+  [showCancel]="alertConfig.showCancel"
+  (confirm)="alertConfig.onConfirm()"
+  (cancel)="alertConfig.onCancel()"
+  (close)="alertConfig = null">
+</app-alert-modal>
