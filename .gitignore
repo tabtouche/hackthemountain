@@ -1,6 +1,7 @@
 __pycache__
 .venv*
 preview
+exported_model
 
 # Logs
 logs
