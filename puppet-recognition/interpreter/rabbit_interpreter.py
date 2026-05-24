@@ -3,17 +3,19 @@ from data.direction import Direction
 
 class RabbitInterpreter:
     ORIENTATION_CORRECTION_RAD = math.radians(-18)
-    MOUTH_CORRECTION_RAD = math.radians(-29)  # tuned for better "mouth open" detection
+    MOUTH_CORRECTION_RAD = math.radians(-29)
 
     @staticmethod
     def interpret(landmarks) -> tuple[Direction, float, float]:
+        """Returns (direction, orientation, angleMouth)."""
+
         wrist    = landmarks[0]
         pinkyTip = landmarks[20]
 
         indexVec  = (landmarks[7].x - landmarks[5].x, landmarks[7].y - landmarks[5].y)
         middleVec = (landmarks[11].x - landmarks[9].x, landmarks[11].y - landmarks[9].y)
         thumbVec  = (landmarks[4].x - landmarks[2].x, landmarks[4].y - landmarks[2].y)
-        noseVec   = ((indexVec[0] + middleVec[0]) / 2, (indexVec[1] + middleVec[1]) / 2)
+        noseVec   = ((3 * indexVec[0] + middleVec[0]) / 4, (3 * indexVec[1] + middleVec[1]) / 4)
         beakVec   = ((noseVec[0] + thumbVec[0]) / 2, (noseVec[1] + thumbVec[1]) / 2)
 
         noseUnit = RabbitInterpreter._normalize(noseVec)
