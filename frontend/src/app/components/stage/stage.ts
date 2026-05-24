@@ -129,10 +129,9 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         // Draw the upper part (base wolf image)
         ctx.drawImage(img, -size / 2, -size / 2, size, size);
 
-        // If beta is enabled use the new mouth logic (hinge, pre-rotation)
-        // otherwise draw the mouth normally (no hinge rotation) to match
-        // the previous behaviour.
-        if (this.wolfMouthLoaded) {
+        // Only draw a mouth for wolves. If beta is enabled use the new mouth
+        // logic (hinge, pre-rotation) otherwise draw the mouth normally.
+        if (e.animal === 'wolf' && this.wolfMouthLoaded) {
           if (this.betaService.enabled) {
             // New behavior: apply hinge pre-rotation, then world transforms
             ctx.restore();
