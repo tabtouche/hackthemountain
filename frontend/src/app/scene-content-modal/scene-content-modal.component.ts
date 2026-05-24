@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Scene } from '../services/scene.service';
 
 
+
 @Component({
   selector: 'app-scene-content-modal',
   standalone: true,
@@ -16,7 +17,7 @@ import { Scene } from '../services/scene.service';
         <p style="color: #666; margin-bottom: 25px;">Que souhaitez-vous configurer pour cette scène ?</p>
         
         <div class="button-group">
-          <button class="action-btn webcam-btn">🎭 Mise en scène (webcam)</button>
+          <button (click)=onSceneSelection($event) class="action-btn webcam-btn">🎭 Mise en scène (webcam)</button>
           <button class="action-btn music-btn">🎵 Musique</button>
           <button class="action-btn decor-btn" (click)="openDecorEditor()">🖼️ Décor</button>
         </div>
@@ -89,6 +90,10 @@ export class SceneContentModalComponent {
 
   openDecorEditor() {
     this.openDecorEditorRequested.emit();
+  }
+
+  onSceneSelection(event: MouseEvent) {
+    // TODO: rediriger vers la vue de scene
   }
 
   onOverlayClick(event: MouseEvent) {

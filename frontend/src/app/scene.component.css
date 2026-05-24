@@ -1,0 +1,67 @@
+.scene-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  background: #f9f9f9;
+  min-height: 100vh;
+}
+
+.top {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+}
+
+video {
+  width: 320px;
+  height: 200px;
+  background: #000;
+  border: 2px solid #333;
+  border-radius: 4px;
+  transform: scaleX(-1);
+}
+
+.overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+button {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  background: #4ecdc4;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  background: #3db8ad;
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+app-stage {
+  width: 100%;
+  max-width: 900px;
+}
