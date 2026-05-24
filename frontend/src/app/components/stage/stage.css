@@ -11,7 +11,7 @@
 .whiteboard {
   width: 100%;
   max-width: 800px;
-  height: 600px;
+  height: 500px;
   background: #ffffff;
   border: 2px solid #333;
   border-radius: 4px;
@@ -19,8 +19,3 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.info {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
-}

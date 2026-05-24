@@ -1,47 +1,67 @@
-import { Component, ElementRef, ViewChild, OnInit, OnDestroy } from '@angular/core';
-
-interface Entity {
-  id: string;
-  animal: 'rabbit' | 'wolf' | string;
-  x: number;
-  y: number;
-  orientation: number;
-  angleMouth: number;
-  facing: 'left' | 'right' | string;
-}
+import { Component, ElementRef, ViewChild, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { EntityStreamService, Entity } from '../../services/entity-stream-service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-stage',
   imports: [],
   templateUrl: './stage.html',
-  styleUrl: './stage.css',
+  styleUrls: ['./stage.css'],
   standalone: true
 })
-export class Stage implements OnInit, OnDestroy {
+export class Stage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   
   entities: Entity[] = [];
   private animationFrameId: number | null = null;
   private eventSource: EventSource | null = null;
-  private rabbitImg: HTMLImageElement | null = null;
+  private subscription: Subscription | null = null;
+  private rabbitImg!: HTMLImageElement;
+  private wolfImg!: HTMLImageElement;
   private rabbitLoaded = false;
+  private wolfLoaded = false;
+
+  constructor(private entityStream: EntityStreamService) {} 
 
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
       this.rabbitImg = new Image();
-      this.rabbitImg.onload = () => { this.rabbitLoaded = true; };
-      this.rabbitImg.src = 'http://localhost:3000/avrage_rabbit.png';
+      this.wolfImg = new Image();
+
+      this.rabbitImg.onload = () => {
+        this.rabbitLoaded = true;
+        console.log('✅ Rabbit loaded');
+      };
+
+      this.rabbitImg.onerror = (e) => {
+        console.error('❌ Rabbit failed to load', e);
+      };
+
+      this.wolfImg.onload = () => {
+        this.wolfLoaded = true;
+      };
+
+      this.rabbitImg.src = '/assets/avrage_rabbit.png';
+      this.wolfImg.src = '/assets/loup.png';
     }
 
-    if (typeof window !== 'undefined' && typeof (window as any).EventSource !== 'undefined') {
-      this.startStream();
-    }
+    this.subscription = this.entityStream.stream().subscribe({
+      next: (entities) => (this.entities = entities),
+      error: (e) => console.error('Stream error', e),
+    });
+  }
+
+  ngAfterViewInit(): void {
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;    // résolution interne = taille CSS réelle
+    canvas.height = rect.height;
     this.startAnimation();
   }
 
   ngOnDestroy(): void {
     this.stopAnimation();
-    this.closeStream();
+    this.subscription?.unsubscribe(); 
   }
 
   startStream(): void {
@@ -116,22 +136,31 @@ export class Stage implements OnInit, OnDestroy {
     this.entities.forEach((e) => {
       const x = (e.x / 100) * canvas.width;
       const y = canvas.height - (e.y / 100) * canvas.height;
+
       const size = 80;
       const drawX = x - size / 2;
       const drawY = y - size / 2;
 
-      if (this.rabbitLoaded && this.rabbitImg) {
-        ctx.drawImage(this.rabbitImg, drawX, drawY, size, size);
+      let img: HTMLImageElement | null = null;
+
+      if (e.animal === 'rabbit') {
+        img = this.rabbitLoaded ? this.rabbitImg : null;
+      } else if (e.animal === 'wolf') {
+        img = this.wolfLoaded ? this.wolfImg : null;
+      }
+
+      if (img) {
+        ctx.drawImage(img, drawX, drawY, size, size);
       } else {
-        ctx.fillStyle = '#4ecdc4';
+        ctx.fillStyle = e.animal === 'wolf' ? '#444' : '#4ecdc4';
         ctx.beginPath();
         ctx.arc(x, y, 25, 0, Math.PI * 2);
         ctx.fill();
       }
 
       ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
       ctx.strokeRect(drawX, drawY, size, size);
     });
   }
 }
+
