@@ -39,48 +39,6 @@ for label in labels:
 
 
 #############################################################
-# Augment the dataset (once)
-#############################################################
-
-def augment_dataset(dataset_path: str, rotations: list[float] = [-30, -15, 15, 30]):
-    sentinel = os.path.join(dataset_path, ".augmented")
-    if os.path.exists(sentinel):
-        print("Dataset already augmented, skipping.")
-        return
-
-    for label in os.listdir(dataset_path):
-        label_dir = os.path.join(dataset_path, label)
-        if not os.path.isdir(label_dir):
-            continue
-
-        originals = [
-            f for f in os.listdir(label_dir)
-            if not f.endswith("_rot") and f.lower().endswith((".jpg", ".jpeg", ".png"))
-        ]
-
-        for filename in originals:
-            img_path = os.path.join(label_dir, filename)
-            img = cv2.imread(img_path)
-            if img is None:
-                continue
-
-            h, w = img.shape[:2]
-            center = (w // 2, h // 2)
-
-            for angle in rotations:
-                M = cv2.getRotationMatrix2D(center, angle, 1.0)
-                rotated = cv2.warpAffine(img, M, (w, h), borderMode=cv2.BORDER_REPLICATE)
-
-                stem, ext = os.path.splitext(filename)
-                out_name = f"{stem}_rot{int(angle)}{ext}"
-                cv2.imwrite(os.path.join(label_dir, out_name), rotated)
-
-        print(f"{label}: {len(originals)} originals -> {len(originals) * (1 + len(rotations))} total")
-
-augment_dataset(dataset_path, rotations=[-30, -15, 15, 30])
-
-
-#############################################################
 # Load the dataset
 #############################################################
 
