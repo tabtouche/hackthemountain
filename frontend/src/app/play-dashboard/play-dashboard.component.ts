@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PlayService, Play } from '../services/play.service';
 import { SceneService, Scene } from '../services/scene.service';
@@ -82,7 +82,8 @@ import { BackgroundEditorComponent } from '../background-editor/background-edito
         *ngIf="selectedSceneForModal"
         [scene]="selectedSceneForModal"
         (closeModal)="closeModal()"
-        (openDecorEditorRequested)="openDecorEditor()">
+        (openDecorEditorRequested)="openDecorEditor()"
+        (openWebcamRequested)="openWebcam()">
       </app-scene-content-modal>
     </div>
 
@@ -126,7 +127,8 @@ export class PlayDashboardComponent implements OnInit {
   editTitle: string = '';
 
   constructor(
-    private route: ActivatedRoute, 
+    private route: ActivatedRoute,
+    private router: Router,
     private playService: PlayService,
     private sceneService: SceneService
   ) {}
@@ -237,6 +239,14 @@ export class PlayDashboardComponent implements OnInit {
 
   closeDecorEditor() {
     this.selectedSceneForDecorEditor = null;
+  }
+
+  openWebcam() {
+    if (this.selectedSceneForModal) {
+      this.sceneService.currentSceneId.set(this.selectedSceneForModal.id);
+      this.selectedSceneForModal = null;
+      this.router.navigate(['/scene']);
+    }
   }
   cancelEdit() {
     this.editingSceneId = null;

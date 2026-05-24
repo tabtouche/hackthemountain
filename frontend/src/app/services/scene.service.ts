@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { signal } from '@angular/core';
 
 export interface Scene {
   id: number;
@@ -16,6 +17,9 @@ export interface Scene {
 export class SceneService {
   private apiUrlPlays = 'http://localhost:3000/api/plays';
   private apiUrlScenes = 'http://localhost:3000/api/scenes';
+
+  // Track the currently active scene for mise en scène / webcam capture
+  currentSceneId = signal<number | null>(null);
 
   constructor(private http: HttpClient) {}
 
