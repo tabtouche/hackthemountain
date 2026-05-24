@@ -231,19 +231,26 @@ export class BackgroundEditorComponent {
           this.bgCanvasRef.nativeElement,
           this.drawCanvasRef.nativeElement
         );
-        this.redrawBg();
+        if (this.scene.background_image) {
+          // Reload the previously saved flat image as the initial canvas state
+          this.canvasService.loadBgImage(this.scene.background_image);
+        } else {
+          this.redrawBg();
+        }
       }
     });
   }
 
   prevBg(): void {
     const len = BACKGROUND_ASSETS.length;
+    this.canvasService.clearSavedBgImage();
     this.bgIndex.update(i => (i - 1 + len) % len);
     this.redrawBg();
   }
 
   nextBg(): void {
     const len = BACKGROUND_ASSETS.length;
+    this.canvasService.clearSavedBgImage();
     this.bgIndex.update(i => (i + 1) % len);
     this.redrawBg();
   }

@@ -9,19 +9,33 @@ export class CanvasService {
   private bgCtx: CanvasRenderingContext2D | null = null;
   private drawCtx: CanvasRenderingContext2D | null = null;
 
+  // Keeps the previously saved flat image in memory so redrawBg() can use it as the base layer.
+  private savedBgImage: HTMLImageElement | null = null;
+
   init(bgCanvas: HTMLCanvasElement, drawCanvas: HTMLCanvasElement): void {
     this.bgCanvas = bgCanvas;
     this.drawCanvas = drawCanvas;
     this.bgCtx = bgCanvas.getContext('2d');
     this.drawCtx = drawCanvas.getContext('2d');
+    this.savedBgImage = null;
   }
 
   redrawBg(background: BackgroundAsset, stickers: Sticker[]): void {
     if (!this.bgCtx || !this.bgCanvas) return;
     const { width, height } = this.bgCanvas;
     this.bgCtx.clearRect(0, 0, width, height);
-    this.drawBackground(background, width, height);
+    if (this.savedBgImage) {
+      // Use the previously saved flat image as the base layer
+      this.bgCtx.drawImage(this.savedBgImage, 0, 0, width, height);
+    } else {
+      this.drawBackground(background, width, height);
+    }
     stickers.forEach(s => this.drawSticker(s));
+  }
+
+  /** Clears the saved image so the next redrawBg() uses the programmatic background. */
+  clearSavedBgImage(): void {
+    this.savedBgImage = null;
   }
 
   redrawDraw(paths: DrawingPath[], currentPath: DrawingPath | null = null): void {
@@ -58,6 +72,18 @@ export class CanvasService {
       }
     }
     return -1;
+  }
+
+  /** Loads a previously saved flat image as the persistent base layer for all subsequent redraws. */
+  loadBgImage(dataUrl: string): void {
+    if (!this.bgCanvas || !this.bgCtx) return;
+    const img = new Image();
+    img.onload = () => {
+      this.savedBgImage = img;
+      this.bgCtx!.clearRect(0, 0, this.bgCanvas!.width, this.bgCanvas!.height);
+      this.bgCtx!.drawImage(img, 0, 0, this.bgCanvas!.width, this.bgCanvas!.height);
+    };
+    img.src = dataUrl;
   }
 
   /** Flattens both canvases into a single PNG dataURL. */
