@@ -54,6 +54,10 @@ export class SceneService {
     return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { music_path: musicPath, music_track: musicTrack });
   }
 
+  saveSequence(id: number, sequenceData: string): Observable<Scene> {
+    return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { sequence_data: sequenceData });
+  }
+
   // Permet de sauvegarder l'ordre en une seule requête suite à un drag & drop
   bulkReorder(scenes: { id: number; sequence_order: number }[]): Observable<any> {
     return this.http.put(`${this.apiUrlScenes}/bulk/reorder`, { scenes });

@@ -71,8 +71,6 @@ def on_frame(bgr_frame):
 
 
 def on_hands(hands: list[HandState], timestamp_ms: int):
-    if not hands:
-        return
     entities = []
     for i, hand in enumerate(hands):
         entities.append({

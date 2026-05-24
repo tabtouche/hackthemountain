@@ -58,7 +58,7 @@ scenesRouter.get('/:id', (req: Request, res: Response) => {
 // Mettre à jour une scène (titre / ordre / décor / musique)
 scenesRouter.put('/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { title, sequence_order, background_image, music_path, music_track } = req.body;
+  const { title, sequence_order, background_image, music_path, music_track, sequence_data } = req.body;
 
   const updates: string[] = [];
   const params: any[] = [];
@@ -77,6 +77,9 @@ scenesRouter.put('/:id', (req: Request, res: Response) => {
   }
   if (music_track !== undefined) {
     updates.push('music_track = ?'); params.push(music_track);
+  }
+  if (sequence_data !== undefined) {
+    updates.push('sequence_data = ?'); params.push(sequence_data);
   }
   
   if (updates.length === 0) return res.status(400).json({ error: 'Rien à mettre à jour' });

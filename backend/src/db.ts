@@ -32,6 +32,7 @@ export const db = new sqlite3.Database(dbPath, (err) => {
       db.run(`ALTER TABLE Scene ADD COLUMN background_image TEXT`, () => {});
       db.run(`ALTER TABLE Scene ADD COLUMN music_path TEXT`, () => {});
       db.run(`ALTER TABLE Scene ADD COLUMN music_track TEXT`, () => {});
+      db.run(`ALTER TABLE Scene ADD COLUMN sequence_data TEXT`, () => {});
     });
   }
 });
