@@ -270,6 +270,7 @@ export class BackgroundEditorComponent implements OnInit {
       y: 540 / 2 - tmpl.defaultHeight / 2,
       width: tmpl.defaultWidth,
       height: tmpl.defaultHeight,
+      image: tmpl.image,
     };
     this.stickers.update(list => [...list, newSticker]);
     this.selectedStickerIndex.set(this.stickers().length - 1);
