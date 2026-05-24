@@ -58,7 +58,7 @@ options = HandLandmarkerOptions(
   result_callback=print_result)
 with HandLandmarker.create_from_options(options) as landmarker:
   # Use OpenCV's VideoCapture to start capturing from the webcam.
-  cap = cv2.VideoCapture(0)
+  cap = cv2.VideoCapture(1, cv2.CAP_AVFOUNDATION)
 
   try:
     while cap.isOpened():
