@@ -1,0 +1,18 @@
+[
+    {
+        "animal" : "rabbit",
+        "x": 30,
+        "y": 50,
+        "orientation": 0,
+        "angleMouth": 0,
+        "facing": "left"
+    },
+    {
+        "animal" : "wolf",
+        "x": 70,
+        "y": 50,
+        "orientation": 3.14,
+        "angleMouth": 0,
+        "facing" : "right"
+    }
+]

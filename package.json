@@ -1,0 +1,28 @@
+{
+  "name": "hackthemountain",
+  "version": "1.0.0",
+  "description": "hi",
+  "main": "index.js",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run start",
+    "dev:backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tabtouche/hackthemountain.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tabtouche/hackthemountain/issues"
+  },
+  "homepage": "https://github.com/tabtouche/hackthemountain#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "zone.js": "^0.16.2"
+  }
+}

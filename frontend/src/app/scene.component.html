@@ -1,0 +1,17 @@
+<div class="scene-root">
+  <div class="top">
+    <video #video autoplay muted playsinline></video>
+    <canvas #canvas class="overlay"></canvas>
+  </div>
+
+  <div class="controls">
+    <button (click)="startCamera()">Commencer caméra</button>
+    <button (click)="startRecording()" [disabled]="recording">Démarrer</button>
+    <button (click)="pauseRecording()" [disabled]="!recording">Pause</button>
+    <button (click)="resumeRecording()" [disabled]="recording">Reprendre</button>
+    <button (click)="stopRecording()">Arrêter</button>
+    <button (click)="restartRecording()">Recommencer</button>
+    <button (click)="goBack()">Retour</button>
+  </div>
+  <app-stage></app-stage>
+</div>
