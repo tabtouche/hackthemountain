@@ -14,13 +14,17 @@ logging.getLogger('websockets').setLevel(logging.CRITICAL)
 from classifier.always_rabbit import AlwaysRabbitClassifier
 from classifier.always_wolf import AlwaysWolfClassifier
 from data.hand_state import HandState
+from typing import Optional
+
+from classifier.model import Model
 from data.pose import Pose
 from data.raw_hand import RawHand
 from hand_tracker import HandTracker
 from interpreter.interpreter import interpret_landmarks
 from landmark_normalizer import LandmarkNormalizer
 
-POSE: Pose = Pose.WOLF
+POSE: Pose = Pose.UNKNOWN
+MODEL = "gesture_recognizer.task"
 WS_HOST = "localhost"
 WS_PORT = 8765
 HEADLESS = os.environ.get("HEADLESS", "0") == "1"
@@ -94,6 +98,8 @@ if __name__ == "__main__":
             classifier = AlwaysRabbitClassifier()
         case Pose.WOLF:
             classifier = AlwaysWolfClassifier()
+        case Pose.UNKNOWN:
+            classifier = Model()
 
     def on_raw_hands(raw_hands: list[RawHand], timestamp_ms: int):
         states = [
@@ -103,5 +109,11 @@ if __name__ == "__main__":
         ]
         on_hands(states, timestamp_ms)
 
-    tracker = HandTracker(callback=on_raw_hands, show_preview=not HEADLESS, max_hands=2, frame_callback=on_frame)
+    tracker = HandTracker(
+        callback=on_raw_hands, 
+        show_preview=not HEADLESS, 
+        max_hands=2, 
+        frame_callback=on_frame,
+        model_path=MODEL
+    )
     tracker.run()
