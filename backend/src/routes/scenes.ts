@@ -45,10 +45,20 @@ playScenesRouter.post('/', (req: Request, res: Response) => {
 // ROUTES : /api/scenes/:id
 // ==========================================
 
-// Mettre à jour une scène (titre ou ordre)
+// Récupérer une scène par ID
+scenesRouter.get('/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  db.get(`SELECT * FROM Scene WHERE id = ?`, [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Scène introuvable' });
+    res.json(row);
+  });
+});
+
+// Mettre à jour une scène (titre / ordre / décor / musique)
 scenesRouter.put('/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { title, sequence_order, background_image } = req.body;
+  const { title, sequence_order, background_image, music_path, music_track } = req.body;
 
   const updates: string[] = [];
   const params: any[] = [];
@@ -62,6 +72,12 @@ scenesRouter.put('/:id', (req: Request, res: Response) => {
   if (background_image !== undefined) {
     updates.push('background_image = ?'); params.push(background_image);
   }
+  if (music_path !== undefined) {
+    updates.push('music_path = ?'); params.push(music_path);
+  }
+  if (music_track !== undefined) {
+    updates.push('music_track = ?'); params.push(music_track);
+  }
   
   if (updates.length === 0) return res.status(400).json({ error: 'Rien à mettre à jour' });
   
@@ -70,6 +86,7 @@ scenesRouter.put('/:id', (req: Request, res: Response) => {
     if (err) return res.status(500).json({ error: err.message });
     
     db.get(`SELECT * FROM Scene WHERE id = ?`, [id], (err, updatedRow) => {
+      if (err) return res.status(500).json({ error: err.message });
       res.json(updatedRow);
     });
   });
