@@ -1,6 +1,7 @@
 import { Component, ElementRef, Input, ViewChild, OnInit, OnDestroy, AfterViewInit, OnChanges, SimpleChanges, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Entity } from '../../services/entity-stream-service';
+import { BetaService } from '../../services/beta.service';
 
 @Component({
   selector: 'app-stage',
@@ -22,20 +23,38 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
   private animationFrameId: number | null = null;
   private rabbitImg!: HTMLImageElement;
+  private wolfUpperImg!: HTMLImageElement;
+  private wolfMouthImg!: HTMLImageElement;
   private wolfImg!: HTMLImageElement;
   private rabbitLoaded = false;
-  private wolfLoaded = false;
+  private wolfUpperLoaded = false;
+  private wolfMouthLoaded = false;
+  private wolfImgLoaded = false;
+
+  // Hinge offset (in image-local pixels) applied to the mouth before
+  // rotating. Adjust these values to fine-tune the mouth hinge point.
+  mouthHinge = { x: 200, y: 200 };
+
+  // Temporary debug toggle: draw the computed hinge point on canvas
+  debugDrawHinge = false;
 
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private betaService = inject(BetaService);
 
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
       this.rabbitImg = new Image();
-      this.wolfImg = new Image();
-      this.rabbitImg.onload = () => { this.rabbitLoaded = true; };
-      this.wolfImg.onload = () => { this.wolfLoaded = true; };
-      this.rabbitImg.src = '/assets/avrage_rabbit.png';
-      this.wolfImg.src = '/assets/loup.png';
+    this.wolfUpperImg = new Image();
+    this.wolfMouthImg = new Image();
+    this.wolfImg = new Image();
+    this.rabbitImg.onload = () => { this.rabbitLoaded = true; };
+    this.wolfUpperImg.onload = () => { this.wolfUpperLoaded = true; };
+    this.wolfMouthImg.onload = () => { this.wolfMouthLoaded = true; };
+    this.wolfImg.onload = () => { this.wolfImgLoaded = true; };
+    this.rabbitImg.src = '/assets/avrage_rabbit.png';
+    this.wolfUpperImg.src = '/assets/loup_upper.png';
+    this.wolfMouthImg.src = '/assets/loup_mouth.png';
+    this.wolfImg.src = '/assets/loup.png';
     }
   }
 
@@ -99,7 +118,7 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       const img = e.animal === 'rabbit'
         ? (this.rabbitLoaded ? this.rabbitImg : null)
-        : (this.wolfLoaded ? this.wolfImg : null);
+        : (this.wolfUpperLoaded ? this.wolfUpperImg : null);
 
       ctx.save();
       ctx.translate(x, y);
@@ -112,7 +131,64 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }
 
       if (img) {
+        // Draw the upper part (base wolf image)
         ctx.drawImage(img, -size / 2, -size / 2, size, size);
+
+        // If beta is enabled use the new mouth logic (hinge, pre-rotation)
+        // otherwise draw the mouth normally (no hinge rotation) to match
+        // the previous behaviour.
+        if (this.wolfMouthLoaded) {
+          if (this.betaService.enabled) {
+            // New behavior: apply hinge pre-rotation, then world transforms
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(this.mouthHinge.x, this.mouthHinge.y);
+            ctx.rotate(e.angleMouth ?? 0);
+            ctx.translate(-this.mouthHinge.x, -this.mouthHinge.y);
+
+            ctx.translate(x, y);
+            if (e.facing === 'right') {
+              ctx.scale(-1, 1);
+              ctx.rotate(e.orientation ?? 0);
+            } else {
+              ctx.rotate(-(e.orientation ?? 0));
+            }
+
+            ctx.drawImage(this.wolfMouthImg, -size / 2, -size / 2, size, size);
+
+            // debug hinge marker
+            if (this.debugDrawHinge && this.wolfMouthImg.width && this.wolfMouthImg.height) {
+              const imgW = this.wolfMouthImg.width;
+              const imgH = this.wolfMouthImg.height;
+              const scaleX = size / imgW;
+              const scaleY = size / imgH;
+              let localHx = -size / 2 + this.mouthHinge.x * scaleX;
+              let localHy = -size / 2 + this.mouthHinge.y * scaleY;
+              if (e.facing === 'right') localHx = -localHx;
+              const rot = e.facing === 'right' ? (e.orientation ?? 0) : -(e.orientation ?? 0);
+              const c = Math.cos(rot);
+              const s = Math.sin(rot);
+              const rx = localHx * c - localHy * s;
+              const ry = localHx * s + localHy * c;
+              const finalX = x + rx;
+              const finalY = y + ry;
+              ctx.save();
+              ctx.setTransform(1, 0, 0, 1, 0, 0);
+              ctx.beginPath();
+              ctx.arc(finalX, finalY, 4, 0, Math.PI * 2);
+              ctx.fillStyle = 'red';
+              ctx.fill();
+              ctx.restore();
+            }
+
+            ctx.restore();
+            ctx.save();
+          } else {
+            // Old behavior: simply draw mouth on top using same world transform
+            ctx.drawImage(this.wolfMouthImg, -size / 2, -size / 2, size, size);
+          }
+        }
       } else {
         ctx.beginPath();
         ctx.arc(0, 0, 25, 0, Math.PI * 2);

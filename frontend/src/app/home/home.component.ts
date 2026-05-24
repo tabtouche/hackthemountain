@@ -6,6 +6,7 @@ import { PlayService, Play } from '../services/play.service';
 import { AlertModalComponent } from '../components/alert-modal/alert-modal.component';
 import { UiService } from '../services/ui.service';
 import { SceneService } from '../services/scene.service';
+import { BetaService } from '../services/beta.service';
 
 @Component({
   selector: 'app-home',
@@ -20,6 +21,9 @@ import { SceneService } from '../services/scene.service';
         <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
           <button (click)="showModal = true" class="fancy" style="padding: 18px 36px; font-size: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 30px; font-weight: bold; box-shadow: 0 6px 20px rgba(0,0,0,0.3);">
             ✨ + Créer un nouveau spectacle
+          </button>
+          <button (click)="toggleBeta()" class="fancy" style="padding: 12px 20px; font-size: 14px; background: linear-gradient(135deg, #ffd86f 0%, #fc6262 100%); color: white; border: none; border-radius: 20px; font-weight: bold; box-shadow: 0 6px 20px rgba(0,0,0,0.2); align-self: center;">
+            {{ betaLabel }}
           </button>
           <button *ngIf="plays.length > 0" (click)="ui.toggleManage()" [style.background]="(ui.manageMode$ | async) ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'" class="fancy" style="padding: 18px 36px; font-size: 20px; color: white; border: none; border-radius: 30px; font-weight: bold; box-shadow: 0 6px 20px rgba(0,0,0,0.3);">
             {{ (ui.manageMode$ | async) ? '✓ Terminé' : '⚙️ Gérer' }}
@@ -153,11 +157,24 @@ export class HomeComponent implements OnInit {
     private router: Router
     , public ui: UiService
     , private sceneService: SceneService
+    , private beta: BetaService
   ) {}
 
   ngOnInit(): void {
     this.loadPlays();
+    this.updateBetaLabel();
   }
+
+  toggleBeta(): void {
+    this.beta.toggle();
+    this.updateBetaLabel();
+  }
+
+  updateBetaLabel(): void {
+    this.betaLabel = this.beta.enabled ? 'BETA: Mouth (ON)' : 'BETA: Mouth (OFF)';
+  }
+
+  betaLabel = 'BETA: Mouth (OFF)';
 
   loadPlays(): void {
     this.playService.getPlays().subscribe({
