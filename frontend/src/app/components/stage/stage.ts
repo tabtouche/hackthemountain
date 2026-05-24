@@ -95,7 +95,7 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.entities.forEach((e) => {
       const x = (e.x / 100) * canvas.width;
       const y = canvas.height - (e.y / 100) * canvas.height;
-      const size = 80;
+      const size = 220;
 
       const img = e.animal === 'rabbit'
         ? (this.rabbitLoaded ? this.rabbitImg : null)

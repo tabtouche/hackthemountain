@@ -10,6 +10,7 @@ import { SceneService } from './services/scene.service';
 import { AudioRecorderService, AudioRecording } from './services/audio-recorder.service';
 import { AlertModalComponent } from './components/alert-modal/alert-modal.component';
 import { UiService } from './services/ui.service';
+import { TRACK_URLS } from './music-tracks';
 
 type RecordingState = 'idle' | 'recording' | 'paused' | 'preview';
 
@@ -77,10 +78,9 @@ export class SceneComponent implements OnInit, OnDestroy {
           next: (scene) => {
             this.backgroundImage = scene.background_image || null;
             
-            // Only use music_path (uploaded files), not music_track (which is just an ID)
-            this.musicPath = scene.music_path || null;
-            
-            // Setup background music if available (only for uploaded music files)
+            const musicUrl = scene.music_path || (scene.music_track ? TRACK_URLS[scene.music_track] : null);
+            this.musicPath = musicUrl || null;
+
             if (this.musicPath && typeof Audio !== 'undefined') {
               this.backgroundMusicElement = new Audio(this.musicPath);
               this.backgroundMusicElement.loop = true;

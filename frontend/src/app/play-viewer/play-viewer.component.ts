@@ -6,6 +6,7 @@ import { SceneService, Scene } from '../services/scene.service';
 import { PlayService } from '../services/play.service';
 import { Sequence, SequenceFrame } from '../services/sequence-recorder.service';
 import { Entity } from '../services/entity-stream-service';
+import { TRACK_URLS } from '../music-tracks';
 
 @Component({
   selector: 'app-play-viewer',
@@ -114,9 +115,11 @@ export class PlayViewerComponent implements OnInit, OnDestroy {
       this.audioElement.load();
     }
 
-    // Only use music_path (uploaded files), not music_track (which is just an ID)
-    if (scene.music_path) {
-      this.backgroundAudio = new Audio(scene.music_path);
+    const musicUrl = scene.music_path || (scene.music_track ? TRACK_URLS[scene.music_track] : null);
+    if (musicUrl) {
+      this.backgroundAudio = new Audio(musicUrl);
+      this.backgroundAudio.loop = true;
+      this.backgroundAudio.volume = 0.5;
       this.backgroundAudio.load();
     }
   }
