@@ -90,7 +90,13 @@ export class Stage implements OnInit, AfterViewInit, OnDestroy {
 
       ctx.save();
       ctx.translate(x, y);
-      ctx.rotate(e.orientation ?? 0);
+      
+      if (e.facing === 'right') {
+        ctx.scale(-1, 1);
+        ctx.rotate(e.orientation ?? 0);
+      } else {
+        ctx.rotate(-(e.orientation ?? 0));
+      }
 
       if (img) {
         ctx.drawImage(img, -size / 2, -size / 2, size, size);
