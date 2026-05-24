@@ -53,11 +53,11 @@ class HandTracker:
             self._update_preview(result, output_image)
 
         hands = []
-        for lm in (result.hand_landmarks or []):
+        for i, lm in enumerate(result.hand_landmarks or []):
             hand = self._extract_raw(lm)
-            if result.gestures:
-                hand.gesture = result.gestures[0][0].category_name
-                hand.confidence = result.gestures[0][0].score
+            if result.gestures and i < len(result.gestures):
+                hand.gesture = result.gestures[i][0].category_name
+                hand.confidence = result.gestures[i][0].score
             hands.append(hand)
 
         self.callback(hands, timestamp_ms)
