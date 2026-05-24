@@ -1,7 +1,7 @@
 export interface BackgroundAsset {
   id: string;
   name: string;
-  type: 'color' | 'gradient';
+  type: 'color' | 'gradient' | 'image';
   value: string;
 }
 
@@ -11,6 +11,7 @@ export interface StickerTemplate {
   color: string;
   defaultWidth: number;
   defaultHeight: number;
+  image?: string;
 }
 
 export interface Sticker {
@@ -22,6 +23,7 @@ export interface Sticker {
   y: number;
   width: number;
   height: number;
+  image?: string;
 }
 
 export interface BrushConfig {
@@ -36,13 +38,15 @@ export interface DrawingPath {
 }
 
 export const BACKGROUND_ASSETS: BackgroundAsset[] = [
-  { id: 'bg1', name: 'Ciel', type: 'color', value: '#87CEEB' },
-  { id: 'bg2', name: 'Forêt', type: 'color', value: '#228B22' },
-  { id: 'bg3', name: 'Nuit', type: 'gradient', value: 'linear-gradient(to bottom, #1a1a2e, #16213e)' },
+  { id: 'bg1', name: 'Ciel la nuit', type: 'image', value: '/assets/ciel_nuit.png' },
+  { id: 'bg2', name: 'Forêt', type: 'image', value: '/assets/foret.png' },
+  { id: 'bg3', name: 'Paysage naturel', type: 'image', value: '/assets/landscape.png' },
+  { id: 'bg4', name: 'Montagne', type: 'image', value: '/assets/mountain.png' },
+  { id: 'bg5', name: 'Arbre', type: 'image', value: '/assets/tree.png' },
 ];
 
 export const STICKER_TEMPLATES: StickerTemplate[] = [
-  { id: 'obj1', label: 'Objet 1', color: '#e74c3c', defaultWidth: 80, defaultHeight: 80 },
-  { id: 'obj2', label: 'Objet 2', color: '#3498db', defaultWidth: 80, defaultHeight: 80 },
-  { id: 'obj3', label: 'Objet 3', color: '#f39c12', defaultWidth: 80, defaultHeight: 80 },
+  { id: 'obj1', label: 'oeuf', color: '#e74c3c', defaultWidth: 80, defaultHeight: 80, image: '/assets/oeuf.png' },
+  { id: 'obj2', label: 'boeuf', color: '#3498db', defaultWidth: 80, defaultHeight: 80, image: '/assets/beef.png' },
+  { id: 'obj3', label: 'carote', color: '#f39c12', defaultWidth: 80, defaultHeight: 80, image: '/assets/carhote.png' },
 ];
