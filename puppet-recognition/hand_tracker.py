@@ -38,8 +38,10 @@ class HandTracker:
 
     def _extract_raw(self, hand_landmarks) -> RawHand:
         lm = hand_landmarks
-        x = 1.0 - lm[0].x
-        y = 1.0 - lm[0].y
+        palm_x = (lm[0].x + lm[9].x) / 2
+        palm_y = (lm[0].y + lm[9].y) / 2
+        x = 1.0 - palm_x
+        y = 1.0 - palm_y
 
         return RawHand(landmarks=lm, x=x, y=y)
 
