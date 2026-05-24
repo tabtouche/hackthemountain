@@ -48,16 +48,19 @@ playScenesRouter.post('/', (req: Request, res: Response) => {
 // Mettre à jour une scène (titre ou ordre)
 scenesRouter.put('/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { title, sequence_order } = req.body;
-  
-  const updates = [];
-  const params = [];
-  
-  if (title !== undefined) { 
-    updates.push('title = ?'); params.push(title); 
+  const { title, sequence_order, background_image } = req.body;
+
+  const updates: string[] = [];
+  const params: any[] = [];
+
+  if (title !== undefined) {
+    updates.push('title = ?'); params.push(title);
   }
-  if (sequence_order !== undefined) { 
-    updates.push('sequence_order = ?'); params.push(sequence_order); 
+  if (sequence_order !== undefined) {
+    updates.push('sequence_order = ?'); params.push(sequence_order);
+  }
+  if (background_image !== undefined) {
+    updates.push('background_image = ?'); params.push(background_image);
   }
   
   if (updates.length === 0) return res.status(400).json({ error: 'Rien à mettre à jour' });

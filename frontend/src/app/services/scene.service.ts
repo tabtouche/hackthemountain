@@ -7,6 +7,7 @@ export interface Scene {
   play_id: number;
   title: string;
   sequence_order: number;
+  background_image?: string;
 }
 
 @Injectable({
@@ -33,6 +34,10 @@ export class SceneService {
 
   deleteScene(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrlScenes}/${id}`);
+  }
+
+  saveBackground(id: number, backgroundImage: string): Observable<Scene> {
+    return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { background_image: backgroundImage });
   }
 
   // Permet de sauvegarder l'ordre en une seule requête suite à un drag & drop

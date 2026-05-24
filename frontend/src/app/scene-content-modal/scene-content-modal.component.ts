@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Scene } from '../services/scene.service';
 
+
 @Component({
   selector: 'app-scene-content-modal',
   standalone: true,
@@ -17,7 +18,7 @@ import { Scene } from '../services/scene.service';
         <div class="button-group">
           <button class="action-btn webcam-btn">🎭 Mise en scène (webcam)</button>
           <button class="action-btn music-btn">🎵 Musique</button>
-          <button class="action-btn decor-btn">🖼️ Décor</button>
+          <button class="action-btn decor-btn" (click)="openDecorEditor()">🖼️ Décor</button>
         </div>
       </div>
     </div>
@@ -80,9 +81,14 @@ import { Scene } from '../services/scene.service';
 export class SceneContentModalComponent {
   @Input() scene!: Scene;
   @Output() closeModal = new EventEmitter<void>();
+  @Output() openDecorEditorRequested = new EventEmitter<void>();
 
   close() {
     this.closeModal.emit();
+  }
+
+  openDecorEditor() {
+    this.openDecorEditorRequested.emit();
   }
 
   onOverlayClick(event: MouseEvent) {
