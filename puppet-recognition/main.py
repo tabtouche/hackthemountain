@@ -10,8 +10,8 @@ from data.hand_state import HandState
 from interpreter.interpreter import interpret_landmarks
 from landmark_normalizer import LandmarkNormalizer
 
-POSE: Pose = Pose.WOLF # Pose.UNKNOWN
-MODEL = "hand_landmarker.task" # "gesture_recognizer.task"
+POSE: Pose = Pose.UNKNOWN
+MODEL = "gesture_recognizer.task"
 
 def on_hands(hands: list[HandState], timestamp_ms: int):
     if not hands:

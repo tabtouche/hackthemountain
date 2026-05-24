@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 # Get the dataset
 #############################################################
 
-dataset_path = "dataset/rps_data_sample"
+dataset_path = "dataset/puppet_data_sample"
 
 print(dataset_path)
 labels = []
