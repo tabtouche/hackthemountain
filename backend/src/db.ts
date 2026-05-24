@@ -23,7 +23,11 @@ export const db = new sqlite3.Database(dbPath, (err) => {
       play_id INTEGER,
       title TEXT NOT NULL,
       sequence_order INTEGER,
+      background_image TEXT,
       FOREIGN KEY (play_id) REFERENCES Play(id)
-    )`);
+    )`, () => {
+      // Add column for existing databases that don't have it yet
+      db.run(`ALTER TABLE Scene ADD COLUMN background_image TEXT`, () => {});
+    });
   }
 });

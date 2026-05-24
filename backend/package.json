@@ -16,10 +16,12 @@
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
+    "@angular-devkit/build-angular": "^21.2.12",
+    "@angular/cli": "^21.2.12",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.9.1",
     "tsx": "^4.22.3",
-    "typescript": "^6.0.3"
+    "typescript": "^5.4.5"
   }
 }

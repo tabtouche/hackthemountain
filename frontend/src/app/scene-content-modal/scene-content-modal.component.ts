@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Scene } from '../services/scene.service';
 
 
+
 @Component({
   selector: 'app-scene-content-modal',
   standalone: true,
@@ -16,9 +17,9 @@ import { Scene } from '../services/scene.service';
         <p style="color: #666; margin-bottom: 25px;">Que souhaitez-vous configurer pour cette scène ?</p>
         
         <div class="button-group">
-          <button (click)=onSceneSelection($event) class="action-btn webcam-btn">🎭 Mise en scène (webcam)</button>
+          <button (click)="openWebcam()" class="action-btn webcam-btn">🎭 Mise en scène (webcam)</button>
           <button class="action-btn music-btn">🎵 Musique</button>
-          <button class="action-btn decor-btn">🖼️ Décor</button>
+          <button class="action-btn decor-btn" (click)="openDecorEditor()">🖼️ Décor</button>
         </div>
       </div>
     </div>
@@ -81,13 +82,19 @@ import { Scene } from '../services/scene.service';
 export class SceneContentModalComponent {
   @Input() scene!: Scene;
   @Output() closeModal = new EventEmitter<void>();
+  @Output() openDecorEditorRequested = new EventEmitter<void>();
+  @Output() openWebcamRequested = new EventEmitter<void>();
 
   close() {
     this.closeModal.emit();
   }
 
-  onSceneSelection(event: MouseEvent) {
-    // TODO: rediriger vers la vue de scene
+  openWebcam() {
+    this.openWebcamRequested.emit();
+  }
+
+  openDecorEditor() {
+    this.openDecorEditorRequested.emit();
   }
 
   onOverlayClick(event: MouseEvent) {

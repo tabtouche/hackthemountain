@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { signal } from '@angular/core';
 
 export interface Scene {
   id: number;
   play_id: number;
   title: string;
   sequence_order: number;
+  background_image?: string;
 }
 
 @Injectable({
@@ -15,6 +17,9 @@ export interface Scene {
 export class SceneService {
   private apiUrlPlays = 'http://localhost:3000/api/plays';
   private apiUrlScenes = 'http://localhost:3000/api/scenes';
+
+  // Track the currently active scene for mise en scène / webcam capture
+  currentSceneId = signal<number | null>(null);
 
   constructor(private http: HttpClient) {}
 
@@ -33,6 +38,10 @@ export class SceneService {
 
   deleteScene(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrlScenes}/${id}`);
+  }
+
+  saveBackground(id: number, backgroundImage: string): Observable<Scene> {
+    return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { background_image: backgroundImage });
   }
 
   // Permet de sauvegarder l'ordre en une seule requête suite à un drag & drop

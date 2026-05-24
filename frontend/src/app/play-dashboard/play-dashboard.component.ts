@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PlayService, Play } from '../services/play.service';
 import { SceneService, Scene } from '../services/scene.service';
@@ -45,9 +45,10 @@ import { SceneContentModalComponent } from '../scene-content-modal/scene-content
           </div>
 
           <div *ngFor="let scene of scenes; let i = index" cdkDrag style="width: 200px; background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; cursor: grab; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" class="scene-card">
-            <!-- Thumbnail Placeholder -->
-            <div (click)="openModal(scene)" style="height: 120px; background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #bbb; cursor: pointer;" title="Cliquer pour configurer le contenu">
-              🖼️
+            <!-- Thumbnail -->
+            <div (click)="openModal(scene)" style="height: 120px; background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #bbb; cursor: pointer; overflow: hidden; position: relative;" title="Cliquer pour configurer le contenu">
+              <img *ngIf="scene.background_image" [src]="scene.background_image" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;" alt="Décor" />
+              <span *ngIf="!scene.background_image">🖼️</span>
             </div>
             
             <!-- Zone Titre -->
@@ -76,10 +77,12 @@ import { SceneContentModalComponent } from '../scene-content-modal/scene-content
       </div>
 
       <!-- Pop-up Sélecteur de Contenu -->
-      <app-scene-content-modal 
-        *ngIf="selectedSceneForModal" 
-        [scene]="selectedSceneForModal" 
-        (closeModal)="closeModal()">
+      <app-scene-content-modal
+        *ngIf="selectedSceneForModal"
+        [scene]="selectedSceneForModal"
+        (closeModal)="closeModal()"
+        (openDecorEditorRequested)="openDecorEditor()"
+        (openWebcamRequested)="openWebcam()">
       </app-scene-content-modal>
     </div>
   `,
@@ -105,7 +108,6 @@ export class PlayDashboardComponent implements OnInit {
   playId: string | null = null;
   play: Play | null = null;
   loading = true;
-  // Modal de sélection
   selectedSceneForModal: Scene | null = null;
 
   
@@ -116,7 +118,8 @@ export class PlayDashboardComponent implements OnInit {
   editTitle: string = '';
 
   constructor(
-    private route: ActivatedRoute, 
+    private route: ActivatedRoute,
+    private router: Router,
     private playService: PlayService,
     private sceneService: SceneService
   ) {}
@@ -218,6 +221,20 @@ export class PlayDashboardComponent implements OnInit {
 
   closeModal() {
     this.selectedSceneForModal = null;
+  }
+
+  openDecorEditor() {
+    if (this.selectedSceneForModal) {
+      this.router.navigate(['/plays', this.playId, 'scene', this.selectedSceneForModal.id, 'decor']);
+      this.selectedSceneForModal = null;
+    }
+  }
+
+  openWebcam() {
+    if (this.selectedSceneForModal) {
+      this.router.navigate(['/plays', this.playId, 'scene', this.selectedSceneForModal.id, 'webcam']);
+      this.selectedSceneForModal = null;
+    }
   }
   cancelEdit() {
     this.editingSceneId = null;
