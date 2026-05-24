@@ -1,4 +1,5 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Stage } from './components/stage/stage';
 
 @Component({
@@ -12,14 +13,23 @@ export class SceneComponent implements OnInit, OnDestroy {
   @ViewChild('video') videoRef!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
   mediaStream: MediaStream | null = null;
   mediaRecorder: MediaRecorder | null = null;
   recordedChunks: Blob[] = [];
   recording = false;
   eventSource: EventSource | null = null;
 
+  private sceneId: string | null = null;
+  private playId: string | null = null;
+
   ngOnInit(): void {
-    // Intentionally empty: entity stream will start when camera is started in browser.
+    this.route.params.subscribe(params => {
+      this.sceneId = params['sceneId'];
+      this.playId = params['playId'];
+    });
   }
 
   ngOnDestroy(): void {
@@ -69,11 +79,12 @@ export class SceneComponent implements OnInit, OnDestroy {
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
+        const filename = this.sceneId ? `scene-${this.sceneId}-${Date.now()}.webm` : `scene-${Date.now()}.webm`;
         // upload to backend
         fetch('http://localhost:3000/api/upload-media', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: `scene-${Date.now()}.webm`, dataUrl })
+          body: JSON.stringify({ filename, dataUrl })
         }).then(r => r.json()).then(console.log).catch(console.error);
       };
       reader.readAsDataURL(blob);
@@ -101,6 +112,14 @@ export class SceneComponent implements OnInit, OnDestroy {
   restartRecording() {
     this.stopRecording();
     this.recordedChunks = [];
+  }
+
+  goBack(): void {
+    if (this.playId) {
+      this.router.navigate(['/plays', this.playId]);
+    } else {
+      this.router.navigate(['/']);
+    }
   }
 
   startEntityStream() {

@@ -1,9 +1,10 @@
 import {
   Component, Input, Output, EventEmitter,
   ViewChild, ElementRef, signal, computed,
-  PLATFORM_ID, afterNextRender, inject,
+  PLATFORM_ID, afterNextRender, inject, OnInit,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SceneService, Scene } from '../services/scene.service';
 import { CanvasService } from './canvas.service';
 import {
@@ -24,7 +25,7 @@ import { DrawingToolsComponent } from './drawing-tools/drawing-tools.component';
 
         <!-- Header -->
         <div class="editor-header">
-          <h2 class="editor-title">🎨 Éditeur de Décor — {{ scene.title }}</h2>
+          <h2 class="editor-title">🎨 Éditeur de Décor — {{ scene?.title || 'Chargement...' }}</h2>
           <div class="header-actions">
             <button class="btn btn-validate" (click)="validate()" [disabled]="saving()">
               {{ saving() ? 'Sauvegarde...' : '✔ Valider' }}
@@ -152,11 +153,6 @@ import { DrawingToolsComponent } from './drawing-tools/drawing-tools.component';
     /* Canvas sized via min() : width-constrained vs height-constrained */
     .canvas-wrapper {
       position: relative;
-      /*
-        Available width  = 95vw - 130px (stickers) - 130px (tools) - 2×50px (nav) = 95vw - 360px
-        Available height = 95vh - 56px (header) - 60px (label+padding)            = 95vh - 116px
-        Pick the smaller dimension so the canvas fits both axes.
-      */
       width: min(
         calc(95vw - 360px),
         calc((95vh - 116px) * 16 / 9)
@@ -194,13 +190,15 @@ import { DrawingToolsComponent } from './drawing-tools/drawing-tools.component';
     .nav-btn:hover { background: rgba(255,255,255,0.35); }
   `]
 })
-export class BackgroundEditorComponent {
-  @Input() scene!: Scene;
+export class BackgroundEditorComponent implements OnInit {
+  @Input() scene?: Scene;
   @Output() closed = new EventEmitter<void>();
 
   @ViewChild('bgCanvas') bgCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('drawCanvas') drawCanvasRef!: ElementRef<HTMLCanvasElement>;
 
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private sceneService = inject(SceneService);
   private canvasService = inject(CanvasService);
   private platformId = inject(PLATFORM_ID);
@@ -214,15 +212,16 @@ export class BackgroundEditorComponent {
 
   currentBg = computed(() => BACKGROUND_ASSETS[this.bgIndex()]);
 
-  // Drag state — plain fields, no signals (updated 60fps, no UI dependency)
   private isDragging = false;
   private dragStickerIdx = -1;
   private dragOffsetX = 0;
   private dragOffsetY = 0;
 
-  // Drawing state
   private isDrawing = false;
   private currentPath: DrawingPath | null = null;
+
+  private sceneId: number | null = null;
+  private playId: string | null = null;
 
   constructor() {
     afterNextRender(() => {
@@ -231,13 +230,19 @@ export class BackgroundEditorComponent {
           this.bgCanvasRef.nativeElement,
           this.drawCanvasRef.nativeElement
         );
-        if (this.scene.background_image) {
-          // Reload the previously saved flat image as the initial canvas state
+        if (this.scene?.background_image) {
           this.canvasService.loadBgImage(this.scene.background_image);
         } else {
           this.redrawBg();
         }
       }
+    });
+  }
+
+  ngOnInit(): void {
+    this.route.params.subscribe(params => {
+      this.playId = params['playId'];
+      this.sceneId = params['sceneId'];
     });
   }
 
@@ -301,7 +306,6 @@ export class BackgroundEditorComponent {
     const hitIdx = this.canvasService.hitTestSticker(this.stickers(), x, y);
 
     if (hitIdx >= 0) {
-      // Priorité au drag du sticker
       this.isDragging = true;
       this.dragStickerIdx = hitIdx;
       this.selectedStickerIndex.set(hitIdx);
@@ -309,7 +313,6 @@ export class BackgroundEditorComponent {
       this.dragOffsetX = x - s.x;
       this.dragOffsetY = y - s.y;
     } else {
-      // Sinon : dessin libre
       this.isDrawing = true;
       this.currentPath = { brush: { ...this.brushConfig() }, points: [{ x, y }] };
     }
@@ -348,25 +351,35 @@ export class BackgroundEditorComponent {
   }
 
   validate(): void {
-    if (this.saving()) return;
+    if (this.saving() || !this.sceneId) return;
     this.saving.set(true);
     const dataUrl = this.canvasService.toDataURL();
-    this.sceneService.saveBackground(this.scene.id, dataUrl).subscribe({
+    this.sceneService.saveBackground(this.sceneId, dataUrl).subscribe({
       next: (updated) => {
-        this.scene.background_image = updated.background_image;
+        if (this.scene) {
+          this.scene.background_image = updated.background_image;
+        }
         this.saving.set(false);
-        this.closed.emit();
+        this.goBack();
       },
       error: (err) => {
         console.error('Erreur sauvegarde décor', err);
         this.saving.set(false);
-        this.closed.emit();
+        this.goBack();
       }
     });
   }
 
   cancel(): void {
-    this.closed.emit();
+    this.goBack();
+  }
+
+  private goBack(): void {
+    if (this.playId) {
+      this.router.navigate(['/plays', this.playId]);
+    } else {
+      this.router.navigate(['/']);
+    }
   }
 
   private redrawBg(): void {

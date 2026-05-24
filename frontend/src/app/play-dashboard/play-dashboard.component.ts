@@ -6,12 +6,11 @@ import { SceneService, Scene } from '../services/scene.service';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
 import { SceneContentModalComponent } from '../scene-content-modal/scene-content-modal.component';
-import { BackgroundEditorComponent } from '../background-editor/background-editor.component';
 
 @Component({
   selector: 'app-play-dashboard',
   standalone: true,
-  imports: [CommonModule, DragDropModule, FormsModule, SceneContentModalComponent, BackgroundEditorComponent],
+  imports: [CommonModule, DragDropModule, FormsModule, SceneContentModalComponent],
   template: `
     <div style="padding: 30px; font-family: sans-serif;">
       <div *ngIf="loading" style="text-align: center; margin-top: 50px;">
@@ -86,13 +85,6 @@ import { BackgroundEditorComponent } from '../background-editor/background-edito
         (openWebcamRequested)="openWebcam()">
       </app-scene-content-modal>
     </div>
-
-    <!-- Éditeur de Décor (plein écran) -->
-    <app-background-editor
-      *ngIf="selectedSceneForDecorEditor"
-      [scene]="selectedSceneForDecorEditor"
-      (closed)="closeDecorEditor()">
-    </app-background-editor>
   `,
   styles: [`
     .cdk-drag-preview {
@@ -117,7 +109,6 @@ export class PlayDashboardComponent implements OnInit {
   play: Play | null = null;
   loading = true;
   selectedSceneForModal: Scene | null = null;
-  selectedSceneForDecorEditor: Scene | null = null;
 
   
   scenes: Scene[] = [];
@@ -233,19 +224,16 @@ export class PlayDashboardComponent implements OnInit {
   }
 
   openDecorEditor() {
-    this.selectedSceneForDecorEditor = this.selectedSceneForModal;
-    this.selectedSceneForModal = null;
-  }
-
-  closeDecorEditor() {
-    this.selectedSceneForDecorEditor = null;
+    if (this.selectedSceneForModal) {
+      this.router.navigate(['/plays', this.playId, 'scene', this.selectedSceneForModal.id, 'decor']);
+      this.selectedSceneForModal = null;
+    }
   }
 
   openWebcam() {
     if (this.selectedSceneForModal) {
-      this.sceneService.currentSceneId.set(this.selectedSceneForModal.id);
+      this.router.navigate(['/plays', this.playId, 'scene', this.selectedSceneForModal.id, 'webcam']);
       this.selectedSceneForModal = null;
-      this.router.navigate(['/scene']);
     }
   }
   cancelEdit() {
