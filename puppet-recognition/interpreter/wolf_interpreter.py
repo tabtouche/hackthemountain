@@ -22,7 +22,9 @@ class WolfInterpreter:
         angleMouth = math.acos(ringUnit[0] * pinkyUnit[0] + ringUnit[1] * pinkyUnit[1])  # dot product
         angleMouth += WolfInterpreter.MOUTH_CORRECTION_RAD
 
-        orientation = math.atan2(-middleVec[1], middleVec[0])
+        # atan2(vy, -vx): negate x to account for mirror display, keep y as-is
+        # (camera and canvas both have y increasing downward, no y-flip needed)
+        orientation = math.atan2(middleVec[1], -middleVec[0])
         orientation += WolfInterpreter.ORIENTATION_CORRECTION_RAD
 
         det = middleVec[0] * thumbVec[1] - middleVec[1] * thumbVec[0]

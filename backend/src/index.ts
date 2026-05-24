@@ -5,6 +5,41 @@ import { playScenesRouter, scenesRouter } from './routes/scenes';
 import sqlite3 from 'sqlite3';
 import fs from 'fs';
 import path from 'path';
+import { spawn, ChildProcess } from 'child_process';
+
+// ── Python puppet process management ────────────────────────────────────────
+const PUPPET_DIR = path.resolve(__dirname, '../../puppet-recognition');
+const PYTHON_VENV_WIN = path.join(PUPPET_DIR, '.venv', 'Scripts', 'python.exe');
+const PYTHON_BIN = fs.existsSync(PYTHON_VENV_WIN) ? PYTHON_VENV_WIN : 'python';
+
+let puppetProcess: ChildProcess | null = null;
+
+function startPuppet() {
+  if (puppetProcess) return;
+  puppetProcess = spawn(PYTHON_BIN, ['main.py'], {
+    cwd: PUPPET_DIR,
+    stdio: 'pipe',
+    env: { ...process.env, HEADLESS: '1' },
+  });
+  puppetProcess.stdout?.on('data', (d) => process.stdout.write(`[puppet] ${d}`));
+  puppetProcess.stderr?.on('data', (d) => process.stderr.write(`[puppet] ${d}`));
+  puppetProcess.on('exit', () => { puppetProcess = null; });
+  puppetProcess.on('error', (err) => {
+    console.error('[puppet] Failed to start Python process:', err.message);
+    puppetProcess = null;
+  });
+  console.log('[puppet] Python process started');
+}
+
+function stopPuppet() {
+  if (!puppetProcess) return;
+  puppetProcess.kill();
+  puppetProcess = null;
+  console.log('[puppet] Python process stopped');
+}
+
+process.on('exit', stopPuppet);
+process.on('SIGINT', () => { stopPuppet(); process.exit(); });
 
 const app = express();
 const port = 3000;
@@ -12,6 +47,7 @@ const port = 3000;
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.use('/backend_uploads', express.static(path.join(process.cwd(), 'backend_uploads')));
 
 // Charger les routes
 app.use('/api/plays', playsRouter);
@@ -133,6 +169,16 @@ app.post('/api/upload-media', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ ok: true, path: `/backend_uploads/${filename}`, mime });
   });
+});
+
+app.post('/api/puppet/start', (_req, res) => {
+  startPuppet();
+  res.json({ ok: true });
+});
+
+app.post('/api/puppet/stop', (_req, res) => {
+  stopPuppet();
+  res.json({ ok: true });
 });
 
 app.listen(port, () => {

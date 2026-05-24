@@ -9,6 +9,8 @@ export interface Scene {
   title: string;
   sequence_order: number;
   background_image?: string;
+  music_path?: string;
+  music_track?: string;
 }
 
 @Injectable({
@@ -27,6 +29,10 @@ export class SceneService {
     return this.http.get<Scene[]>(`${this.apiUrlPlays}/${playId}/scenes`);
   }
 
+  getScene(sceneId: number): Observable<Scene> {
+    return this.http.get<Scene>(`${this.apiUrlScenes}/${sceneId}`);
+  }
+
   createScene(playId: string | number, title?: string): Observable<Scene> {
     const body = title ? { title } : {};
     return this.http.post<Scene>(`${this.apiUrlPlays}/${playId}/scenes`, body);
@@ -42,6 +48,14 @@ export class SceneService {
 
   saveBackground(id: number, backgroundImage: string): Observable<Scene> {
     return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { background_image: backgroundImage });
+  }
+
+  saveMusic(id: number, musicPath?: string, musicTrack?: string): Observable<Scene> {
+    return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { music_path: musicPath, music_track: musicTrack });
+  }
+
+  saveSequence(id: number, sequenceData: string): Observable<Scene> {
+    return this.http.put<Scene>(`${this.apiUrlScenes}/${id}`, { sequence_data: sequenceData });
   }
 
   // Permet de sauvegarder l'ordre en une seule requête suite à un drag & drop

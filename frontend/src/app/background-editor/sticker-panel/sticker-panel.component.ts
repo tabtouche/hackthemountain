@@ -14,10 +14,10 @@ import { STICKER_TEMPLATES, StickerTemplate } from '../background-editor.models'
         <div
           *ngFor="let tmpl of templates"
           class="sticker-item"
-          [style.background]="tmpl.color"
           (click)="addSticker.emit(tmpl)"
         >
-          {{ tmpl.label }}
+          <img *ngIf="tmpl.image" [src]="tmpl.image" [alt]="tmpl.label" />
+          <span *ngIf="!tmpl.image">{{ tmpl.label }}</span>
         </div>
       </div>
       <hr class="divider" />
@@ -67,6 +67,11 @@ import { STICKER_TEMPLATES, StickerTemplate } from '../background-editor.models'
       cursor: pointer;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .sticker-item img {
+      max-height: 48px;
+      max-width: 100%;
+      object-fit: contain;
     }
     .sticker-item:hover {
       transform: scale(1.05);

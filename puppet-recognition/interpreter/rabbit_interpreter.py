@@ -23,7 +23,7 @@ class RabbitInterpreter:
         angleMouth = math.acos(noseUnit[0] * thumbUnit[0] + noseUnit[1] * thumbUnit[1])  # dot product
         angleMouth += RabbitInterpreter.MOUTH_CORRECTION_RAD
 
-        orientation = math.atan2(-beakVec[1], beakVec[0])
+        orientation = math.atan2(beakVec[1], -beakVec[0])
         orientation += RabbitInterpreter.ORIENTATION_CORRECTION_RAD
 
         pinkyVec = (pinkyTip.x - wrist.x, pinkyTip.y - wrist.y)

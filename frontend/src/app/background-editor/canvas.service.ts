@@ -27,9 +27,28 @@ export class CanvasService {
     if (this.savedBgImage) {
       // Use the previously saved flat image as the base layer
       this.bgCtx.drawImage(this.savedBgImage, 0, 0, width, height);
-    } else {
-      this.drawBackground(background, width, height);
+      stickers.forEach(s => this.drawSticker(s));
+      return;
     }
+
+    // If background is an image, load it and draw stickers after load.
+    if (background.type === 'image') {
+      const img = new Image();
+      // allow local assets without CORS; if remote, the server should set CORS headers
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        if (!this.bgCtx || !this.bgCanvas) return;
+        this.bgCtx.clearRect(0, 0, width, height);
+        this.bgCtx.drawImage(img, 0, 0, width, height);
+        stickers.forEach(s => this.drawSticker(s));
+      };
+      // support absolute '/assets/...' or relative paths
+      img.src = background.value;
+      return;
+    }
+
+    // Fallback: programmatic backgrounds (color/gradient)
+    this.drawBackground(background, width, height);
     stickers.forEach(s => this.drawSticker(s));
   }
 
@@ -117,6 +136,47 @@ export class CanvasService {
 
   private drawSticker(s: Sticker): void {
     if (!this.bgCtx) return;
+
+    // If sticker has an image, draw it (with caching)
+    const anyS = s as any;
+    if (anyS.image) {
+      // cache images by URL
+      if (!(this as any)._stickerImgCache) {
+        (this as any)._stickerImgCache = {} as Record<string, HTMLImageElement>;
+      }
+      const cache: Record<string, HTMLImageElement> = (this as any)._stickerImgCache;
+      const url = anyS.image;
+      const drawImg = (img: HTMLImageElement) => {
+        this.bgCtx!.drawImage(img, s.x, s.y, s.width, s.height);
+      };
+
+      const cached = cache[url];
+      if (cached && cached.complete) {
+        drawImg(cached);
+        return;
+      }
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        cache[url] = img;
+        drawImg(img);
+      };
+      img.onerror = () => {
+        // fallback to colored box if image fails
+        this.bgCtx!.fillStyle = s.color;
+        this.bgCtx!.fillRect(s.x, s.y, s.width, s.height);
+        this.bgCtx!.fillStyle = 'rgba(255,255,255,0.85)';
+        this.bgCtx!.font = 'bold 14px sans-serif';
+        this.bgCtx!.textAlign = 'center';
+        this.bgCtx!.textBaseline = 'middle';
+        this.bgCtx!.fillText(s.label, s.x + s.width / 2, s.y + s.height / 2);
+      };
+      img.src = url;
+      return;
+    }
+
+    // Default: colored box with label
     this.bgCtx.fillStyle = s.color;
     this.bgCtx.fillRect(s.x, s.y, s.width, s.height);
     this.bgCtx.fillStyle = 'rgba(255,255,255,0.85)';

@@ -82,7 +82,8 @@ import { SceneContentModalComponent } from '../scene-content-modal/scene-content
         [scene]="selectedSceneForModal"
         (closeModal)="closeModal()"
         (openDecorEditorRequested)="openDecorEditor()"
-        (openWebcamRequested)="openWebcam()">
+        (openWebcamRequested)="openWebcam()"
+        (openMusicEditorRequest)="openMusicEditor()">
       </app-scene-content-modal>
     </div>
   `,
@@ -236,6 +237,14 @@ export class PlayDashboardComponent implements OnInit {
       this.selectedSceneForModal = null;
     }
   }
+
+  openMusicEditor(){
+    if (this.selectedSceneForModal) {
+      this.router.navigate(['/plays', this.playId, 'scene', this.selectedSceneForModal.id, 'music']);
+      this.selectedSceneForModal = null;
+    }
+  }
+
   cancelEdit() {
     this.editingSceneId = null;
   }

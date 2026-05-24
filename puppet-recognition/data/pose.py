@@ -1,6 +1,6 @@
-from enum import StrEnum
+from enum import Enum
 
-class Pose(StrEnum):
+class Pose(str, Enum):
     RABBIT = "rabbit"
     WOLF = "wolf"
     UNKNOWN = "unknown"

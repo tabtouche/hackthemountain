@@ -1,5 +1,5 @@
-from enum import StrEnum
+from enum import Enum
 
-class Direction(StrEnum):
+class Direction(str, Enum):
     LEFT = "left"
     RIGHT = "right"

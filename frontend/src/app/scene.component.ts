@@ -1,6 +1,13 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { Stage } from './components/stage/stage';
+import { VideoStreamService } from './services/video-stream.service';
+import { EntityStreamService, Entity } from './services/entity-stream-service';
+import { SequenceRecorderService, Sequence } from './services/sequence-recorder.service';
+import { SceneService } from './services/scene.service';
+
+type RecordingState = 'idle' | 'recording' | 'paused' | 'preview';
 
 @Component({
   selector: 'app-scene',
@@ -10,162 +17,254 @@ import { Stage } from './components/stage/stage';
   imports: [Stage]
 })
 export class SceneComponent implements OnInit, OnDestroy {
-  @ViewChild('video') videoRef!: ElementRef<HTMLVideoElement>;
-  @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('videoCanvas') videoCanvasRef!: ElementRef<HTMLCanvasElement>;
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private videoStream = inject(VideoStreamService);
+  private entityStream = inject(EntityStreamService);
+  private recorder = inject(SequenceRecorderService);
+  private sceneService = inject(SceneService);
 
-  mediaStream: MediaStream | null = null;
-  mediaRecorder: MediaRecorder | null = null;
-  recordedChunks: Blob[] = [];
-  recording = false;
-  eventSource: EventSource | null = null;
+  // Camera
+  cameraActive = false;
+  isLoading = false;
+
+  // Stage
+  stageEntities: Entity[] = [];
+
+  // Recording
+  recordingState: RecordingState = 'idle';
+  currentSequence: Sequence | null = null;
+  saving = false;
+
+  // Preview playback
+  previewEntities: Entity[] = [];
+  previewPlaying = false;
+  previewCurrentFrameIndex = 0;
 
   private sceneId: string | null = null;
   private playId: string | null = null;
+  private videoSubscription: Subscription | null = null;
+  private entitySubscription: Subscription | null = null;
+  private previewTimer: ReturnType<typeof setTimeout> | null = null;
+  private frameImg = typeof window !== 'undefined' ? new Image() : null;
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       this.sceneId = params['sceneId'];
       this.playId = params['playId'];
     });
+
+    this.entitySubscription = this.entityStream.stream().subscribe(entities => {
+      if (this.recordingState !== 'preview') {
+        this.stageEntities = entities;
+      }
+      this.recorder.record(entities);
+    });
   }
 
   ngOnDestroy(): void {
     this.stopCamera();
-    this.closeEntityStream();
+    this.entitySubscription?.unsubscribe();
+    this.stopPuppetProcess();
+    this.clearPreviewTimer();
   }
 
-  async startCamera() {
-    if (this.mediaStream) return;
-    try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (this.videoRef?.nativeElement) {
-        this.videoRef.nativeElement.srcObject = this.mediaStream;
-        await this.videoRef.nativeElement.play();
+  // ── Camera ───────────────────────────────────────────────────────────────
+
+  toggleCamera(): void {
+    if (this.cameraActive) this.stopCamera();
+    else this.startCamera();
+  }
+
+  async startCamera(): Promise<void> {
+    if (this.cameraActive) return;
+    this.cameraActive = true;
+    this.isLoading = true;
+    await this.startPuppetProcess();
+    this.videoSubscription = this.videoStream.stream().subscribe(dataUrl => {
+      if (this.isLoading) this.isLoading = false;
+      this.drawVideoFrame(dataUrl);
+    });
+  }
+
+  stopCamera(): void {
+    this.videoSubscription?.unsubscribe();
+    this.videoSubscription = null;
+    this.cameraActive = false;
+    this.isLoading = false;
+    this.stopPuppetProcess();
+  }
+
+  private drawVideoFrame(dataUrl: string): void {
+    const canvas = this.videoCanvasRef?.nativeElement;
+    if (!canvas || !this.frameImg) return;
+    this.frameImg.onload = () => {
+      if (canvas.width !== this.frameImg!.naturalWidth) {
+        canvas.width = this.frameImg!.naturalWidth;
+        canvas.height = this.frameImg!.naturalHeight;
       }
-      // Start entity stream now that we're in a browser user session
-      if (typeof window !== 'undefined' && typeof (window as any).EventSource !== 'undefined') {
-        if (!this.eventSource) this.startEntityStream();
-      }
-    } catch (e) {
-      console.error('Camera error', e);
+      canvas.getContext('2d')?.drawImage(this.frameImg!, 0, 0);
+    };
+    this.frameImg.src = dataUrl;
+  }
+
+  private async startPuppetProcess(): Promise<void> {
+    try { await fetch('http://localhost:3000/api/puppet/start', { method: 'POST' }); } catch { }
+  }
+
+  private stopPuppetProcess(): void {
+    fetch('http://localhost:3000/api/puppet/stop', { method: 'POST' }).catch(() => { });
+  }
+
+  // ── Recording ────────────────────────────────────────────────────────────
+
+  startRecording(): void {
+    this.recorder.start();
+    this.recordingState = 'recording';
+  }
+
+  pauseRecording(): void {
+    this.recorder.pause();
+    this.recordingState = 'paused';
+  }
+
+  resumeRecording(): void {
+    this.recorder.resume();
+    this.recordingState = 'recording';
+  }
+
+  stopRecording(): void {
+    this.currentSequence = this.recorder.stop();
+    this.recordingState = 'preview';
+    this.previewCurrentFrameIndex = 0;
+    this.previewPlaying = true;
+    this.previewEntities = this.currentSequence.frames[0]?.entities ?? [];
+    this.scheduleNextFrame();
+  }
+
+  restartRecording(): void {
+    this.clearPreviewTimer();
+    this.recorder.reset();
+    this.currentSequence = null;
+    this.recordingState = 'idle';
+    this.stageEntities = [];
+    this.previewEntities = [];
+    this.previewPlaying = false;
+    this.previewCurrentFrameIndex = 0;
+  }
+
+  // ── Preview playback ─────────────────────────────────────────────────────
+
+  private scheduleNextFrame(): void {
+    if (!this.previewPlaying || !this.currentSequence) return;
+    const frames = this.currentSequence.frames;
+    const nextIndex = this.previewCurrentFrameIndex + 1;
+
+    if (nextIndex >= frames.length) {
+      this.previewTimer = setTimeout(() => {
+        this.previewCurrentFrameIndex = 0;
+        this.previewEntities = frames[0]?.entities ?? [];
+        this.scheduleNextFrame();
+      }, 700);
+      return;
+    }
+
+    const delay = frames[nextIndex].t - frames[this.previewCurrentFrameIndex].t;
+    this.previewTimer = setTimeout(() => {
+      this.previewCurrentFrameIndex = nextIndex;
+      this.previewEntities = frames[nextIndex].entities;
+      this.scheduleNextFrame();
+    }, Math.max(1, delay));
+  }
+
+  togglePreviewPlayback(): void {
+    this.previewPlaying = !this.previewPlaying;
+    if (this.previewPlaying) {
+      this.scheduleNextFrame();
+    } else {
+      this.clearPreviewTimer();
     }
   }
 
-  stopCamera() {
-    if (!this.mediaStream) return;
-    this.mediaStream.getTracks().forEach(t => t.stop());
-    this.mediaStream = null;
+  seekTo(index: number): void {
+    if (!this.currentSequence) return;
+    this.clearPreviewTimer();
+    this.previewPlaying = false;
+    this.previewCurrentFrameIndex = index;
+    this.previewEntities = this.currentSequence.frames[index]?.entities ?? [];
   }
 
-  startRecording() {
-    if (!this.mediaStream) return;
-    this.recordedChunks = [];
-    const options: MediaRecorderOptions = { mimeType: 'video/webm;codecs=vp8' };
-    try {
-      this.mediaRecorder = new MediaRecorder(this.mediaStream, options);
-    } catch (e) {
-      this.mediaRecorder = new MediaRecorder(this.mediaStream as MediaStream);
+  onSeekInput(event: Event): void {
+    this.seekTo(+(event.target as HTMLInputElement).value);
+  }
+
+  stepBack(): void {
+    if (!this.currentSequence) return;
+    this.seekTo(Math.max(0, this.previewCurrentFrameIndex - 15));
+  }
+
+  stepForward(): void {
+    if (!this.currentSequence) return;
+    this.seekTo(Math.min(this.currentSequence.frames.length - 1, this.previewCurrentFrameIndex + 15));
+  }
+
+  private clearPreviewTimer(): void {
+    if (this.previewTimer !== null) {
+      clearTimeout(this.previewTimer);
+      this.previewTimer = null;
     }
-
-    this.mediaRecorder.ondataavailable = (ev) => {
-      if (ev.data && ev.data.size > 0) this.recordedChunks.push(ev.data);
-    };
-
-    this.mediaRecorder.onstop = () => {
-      const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        const filename = this.sceneId ? `scene-${this.sceneId}-${Date.now()}.webm` : `scene-${Date.now()}.webm`;
-        // upload to backend
-        fetch('http://localhost:3000/api/upload-media', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename, dataUrl })
-        }).then(r => r.json()).then(console.log).catch(console.error);
-      };
-      reader.readAsDataURL(blob);
-    };
-
-    this.mediaRecorder.start(1000);
-    this.recording = true;
   }
 
-  pauseRecording() {
-    this.mediaRecorder?.pause();
-    this.recording = false;
+  // ── Validate / delete ────────────────────────────────────────────────────
+
+  validateSequence(): void {
+    if (!this.currentSequence || !this.sceneId) return;
+    this.saving = true;
+    this.sceneService.saveSequence(Number(this.sceneId), JSON.stringify(this.currentSequence)).subscribe({
+      next: () => { this.saving = false; this.finishPreview(); },
+      error: () => { this.saving = false; }
+    });
   }
 
-  resumeRecording() {
-    this.mediaRecorder?.resume();
-    this.recording = true;
+  deleteSequence(): void {
+    this.finishPreview();
   }
 
-  stopRecording() {
-    this.mediaRecorder?.stop();
-    this.recording = false;
+  private finishPreview(): void {
+    this.clearPreviewTimer();
+    this.recorder.reset();
+    this.currentSequence = null;
+    this.recordingState = 'idle';
+    this.stageEntities = [];
+    this.previewEntities = [];
+    this.previewPlaying = false;
+    this.previewCurrentFrameIndex = 0;
   }
 
-  restartRecording() {
-    this.stopRecording();
-    this.recordedChunks = [];
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  get durationLabel(): string {
+    if (!this.currentSequence) return '0:00';
+    const s = Math.round(this.currentSequence.duration / 1000);
+    return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+  }
+
+  get previewTimeLabel(): string {
+    if (!this.currentSequence) return '0:00';
+    const t = this.currentSequence.frames[this.previewCurrentFrameIndex]?.t ?? 0;
+    const s = Math.floor(t / 1000);
+    const cs = Math.floor((t % 1000) / 10);
+    return `${s}:${cs.toString().padStart(2, '0')}`;
+  }
+
+  get totalFrames(): number {
+    return this.currentSequence?.frames.length ?? 0;
   }
 
   goBack(): void {
-    if (this.playId) {
-      this.router.navigate(['/plays', this.playId]);
-    } else {
-      this.router.navigate(['/']);
-    }
-  }
-
-  startEntityStream() {
-    if (typeof window === 'undefined' || typeof (window as any).EventSource === 'undefined') return;
-    if (this.eventSource) return;
-    this.eventSource = new EventSource('http://localhost:3000/stream/entities');
-    this.eventSource.onmessage = (ev) => {
-      try {
-        const data = JSON.parse(ev.data);
-        this.drawEntities(data.payload);
-      } catch (e) {
-        console.error('Invalid event data', e);
-      }
-    };
-    this.eventSource.onerror = (e) => {
-      console.error('EventSource error', e);
-      // keep it simple: close on error
-      // this.closeEntityStream();
-    };
-  }
-
-  closeEntityStream() {
-    this.eventSource?.close();
-    this.eventSource = null;
-  }
-
-  drawEntities(entities: any[]) {
-    const canvas = this.canvasRef?.nativeElement;
-    const video = this.videoRef?.nativeElement;
-    if (!canvas || !video) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // simple rendering: draw circle per entity and label
-    entities.forEach((e) => {
-      const x = (e.x / 100) * canvas.width;
-      const y = (e.y / 100) * canvas.height;
-      ctx.beginPath();
-      ctx.fillStyle = e.animal === 'wolf' ? 'rgba(255,0,0,0.6)' : 'rgba(0,200,0,0.6)';
-      ctx.arc(x, y, 30, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = '16px sans-serif';
-      ctx.fillText(e.animal, x - 20, y + 6);
-    });
+    if (this.playId) this.router.navigate(['/plays', this.playId]);
+    else this.router.navigate(['/']);
   }
 }

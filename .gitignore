@@ -21,6 +21,9 @@ jspm_packages/
 # Optional eslint cache
 .eslintcache
 
+# Ignore Python virtual environment
+.venv/
+
 # Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
