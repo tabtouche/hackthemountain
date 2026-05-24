@@ -32,6 +32,7 @@ export class SceneComponent implements OnInit, OnDestroy {
   private sceneService = inject(SceneService);
   private audioRecorder = inject(AudioRecorderService);
   public ui = inject(UiService);
+  tutorialExpanded = false;
 
   // Camera
   cameraActive = false;

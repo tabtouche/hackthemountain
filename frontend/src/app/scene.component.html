@@ -20,6 +20,34 @@
     </button>
   </div>
 
+  <!-- Hand tutorial -->
+<div class="hand-tutorial" [class.expanded]="tutorialExpanded">
+  <button class="tutorial-toggle" (click)="tutorialExpanded = !tutorialExpanded">
+    <span>👐 Comment positionner vos mains</span>
+    <span class="tutorial-chevron">{{ tutorialExpanded ? '▲' : '▼' }}</span>
+  </button>
+
+  <div class="tutorial-body">
+    <div class="tutorial-cards">
+
+      <div class="tutorial-card">
+        <img src="assets/main_loup.png" alt="Position main loup" class="tutorial-img" />
+        <div class="tutorial-info">
+          <span class="tutorial-name">🐺 Le Loup</span>
+        </div>
+      </div>
+
+      <div class="tutorial-card">
+        <img src="assets/main_lapin.png" alt="Position main lapin" class="tutorial-img" />
+        <div class="tutorial-info">
+          <span class="tutorial-name">🐇 Le Lapin</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
   <!-- Recording controls -->
   <div class="controls">
     @if (recordingState === 'idle') {

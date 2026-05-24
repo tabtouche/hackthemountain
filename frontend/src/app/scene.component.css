@@ -300,3 +300,91 @@ app-stage {
 
 .btn-validate { background: #48bb78; color: #fff; }
 .btn-delete   { background: #fc8181; color: #fff; }
+
+/* ── Hand tutorial ── */
+.hand-tutorial {
+  width: 100%;
+  max-width: 700px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+}
+
+.tutorial-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  border-radius: 16px;
+  transition: background 0.2s;
+  box-sizing: border-box;
+}
+.tutorial-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tutorial-chevron {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* Collapsible body — caché par défaut */
+.tutorial-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.hand-tutorial.expanded .tutorial-body {
+  max-height: 600px;
+}
+
+.tutorial-cards {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0 16px 16px;
+}
+
+.tutorial-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 14px;
+  flex: 1;
+  min-width: 260px;
+  max-width: 320px;
+}
+
+.tutorial-img {
+  width: 100px;
+  height: auto;
+  aspect-ratio: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.tutorial-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tutorial-name {
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
