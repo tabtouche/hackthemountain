@@ -5,6 +5,7 @@ import { PlayCreationModalComponent } from '../play-creation-modal/play-creation
 import { PlayService, Play } from '../services/play.service';
 import { AlertModalComponent } from '../components/alert-modal/alert-modal.component';
 import { UiService } from '../services/ui.service';
+import { SceneService } from '../services/scene.service';
 
 @Component({
   selector: 'app-home',
@@ -30,24 +31,25 @@ import { UiService } from '../services/ui.service';
       <div *ngIf="plays.length > 0" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
         <h2 style="text-align: center; margin: 0 0 15px 0; font-size: 2rem; color: white; text-shadow: 3px 3px 6px rgba(0,0,0,0.3); flex-shrink: 0;">🎬 Mes Spectacles</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; overflow-y: auto; padding: 20px; flex: 1; min-height: 0;" class="custom-scrollbar">
-          <div *ngFor="let play of plays" 
-               class="play-card"
-               style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border: 4px solid white; border-radius: 20px; padding: 25px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.2); margin: 10px;">
+           <div *ngFor="let play of plays" 
+             class="play-card"
+             [ngClass]="{'unplayable': !isPlayable(play)}"
+             style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border: 4px solid white; border-radius: 20px; padding: 25px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.2); margin: 10px;">
             
             <!-- Delete button (top-right, only in manage mode) -->
             <button *ngIf="(ui.manageMode$ | async)" (click)="play.id && deletePlay(play.id)" class="btn-x" style="position: absolute; top: -10px; right: -10px; width: 40px; height: 40px; background: #dc3545; color: white; border: 3px solid white; border-radius: 50%; font-size: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 10;" title="Supprimer">
               ×
             </button>
             
-            <div (click)="play.id && viewIfNotManage(play.id)">
+            <div class="card-body" (click)="play.id && onPlayClick(play)">
               <h3 style="margin: 0 0 15px 0; color: #d63031; font-size: 2rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">🎬 {{ play.title }}</h3>
               <p style="margin: 0; color: #2d3436; font-size: 1.2rem; font-weight: bold;">Par {{ play.director_name }}</p>
               <p *ngIf="play.created_at" style="margin: 15px 0 0 0; color: #636e72; font-size: 1rem;">Créé le {{ formatDate(play.created_at) }}</p>
             </div>
             
             <!-- Edit button (always visible) -->
-            <div style="margin-top: 20px;">
-              <button (click)="play.id && editPlay(play.id)" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+            <div style="margin-top: 20px; position: relative; z-index: 20;">
+              <button class="edit-btn" (click)="play.id && editPlay(play.id)" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
                 ✏️ Éditer
               </button>
             </div>
@@ -106,6 +108,37 @@ import { UiService } from '../services/ui.service';
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: rgba(255,255,255,0.8);
     }
+
+    .play-card.unplayable {
+      background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+      border: 3px dashed #c0bfbf;
+    }
+
+    .play-card.unplayable .card-body {
+      opacity: 0.6;
+    }
+
+    .play-card.unplayable h3 { color: #666; }
+
+    .play-card.unplayable::after {
+      content: 'Non jouable';
+      position: absolute;
+      top: 12px;
+      right: 35px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      z-index: 5;
+    }
+
+    /* Ensure edit button stays fully visible and above the pellet */
+    .play-card.unplayable .edit-btn {
+      opacity: 1 !important;
+      position: relative;
+      z-index: 20;
+    }
   `]
 })
 export class HomeComponent implements OnInit {
@@ -113,11 +146,13 @@ export class HomeComponent implements OnInit {
   plays: Play[] = [];
   loading = true;
   alertConfig: any = null;
+  playableMap: { [playId: number]: boolean } = {};
 
   constructor(
     private playService: PlayService,
     private router: Router
     , public ui: UiService
+    , private sceneService: SceneService
   ) {}
 
   ngOnInit(): void {
@@ -129,6 +164,19 @@ export class HomeComponent implements OnInit {
       next: (plays: Play[]) => {
         this.plays = plays;
         this.loading = false;
+        // Preload scene info to determine if a play is playable (has sequence_data)
+        for (const p of plays) {
+          if (!p.id) continue;
+          this.sceneService.getScenes(p.id).subscribe({
+            next: (scenes) => {
+              this.playableMap[p.id!] = scenes.some(s => !!s.sequence_data);
+            },
+            error: (err) => {
+              console.error('Error loading scenes for play', p.id, err);
+              this.playableMap[p.id!] = false;
+            }
+          });
+        }
       },
       error: (err: any) => {
         console.error('Error loading plays:', err);
@@ -147,6 +195,31 @@ export class HomeComponent implements OnInit {
 
   editPlay(playId: number): void {
     this.router.navigate(['/plays', playId]);
+  }
+
+  isPlayable(play: Play): boolean {
+    if (!play.id) return false;
+    return !!this.playableMap[play.id];
+  }
+
+  onPlayClick(play: Play): void {
+    if (!play.id) return;
+    // do nothing when in manage mode
+    if (this.ui.value) return;
+
+    if (this.isPlayable(play)) {
+      this.viewPlay(play.id);
+    } else {
+      this.alertConfig = {
+        title: 'Spectacle non jouable',
+        message: 'Ce spectacle ne contient pas encore de scène enregistrée. Ajoutez et enregistrez au moins une scène pour pouvoir le regarder.',
+        icon: 'ℹ️',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => { this.alertConfig = null; },
+        onCancel: () => { this.alertConfig = null; }
+      };
+    }
   }
 
   deletePlay(playId: number): void {
